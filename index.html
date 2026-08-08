@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Emoji Catch — Laylah's Game</title>
+  <style>
+    html, body {
+      margin: 0; height: 100%;
+      background: #1b1035;
+      font-family: -apple-system, Arial, sans-serif;
+      color: white;
+      overscroll-behavior: none; touch-action: none;
+      -webkit-user-select: none; user-select: none;
+    }
+    #wrap { display: flex; flex-direction: column; align-items: center; }
+    h1 { margin: 8px; font-size: 20px; }
+    canvas {
+      background: linear-gradient(#bfe9ff, #eafff0);
+      border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      max-width: 96vw; max-height: 88vh;
+    }
+    p.hint { opacity: 0.7; font-size: 13px; margin: 6px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <h1>🎯 Emoji Catch</h1>
+    <canvas id="stage" width="420" height="640"></canvas>
+    <p class="hint">Tap the character shown up top. Earn points, then unlock cuties in the Store!</p>
+  </div>
+
+  <script>
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  // =====================================================================
+  //  HAND-DRAWN CUTE CHARACTERS
+  //  Each one is a little function that paints a character with code.
+  //  (cx, cy) = center, r = how big (roughly the radius).
+  //  kawaiiFace() gives them all the same sweet eyes + smile + blush.
+  // =====================================================================
+  function kawaiiFace(cx, cy, r, opts) {
+    opts = opts || {};
+    const eyeC = opts.eye || "#3a2b4a";
+    // eyes
+    ctx.fillStyle = eyeC;
+    ctx.beginPath(); ctx.arc(cx - r * 0.30, cy - r * 0.05, r * 0.10, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + r * 0.30, cy - r * 0.05, r * 0.10, 0, 7); ctx.fill();
+    // tiny eye sparkles
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath(); ctx.arc(cx - r * 0.33, cy - r * 0.10, r * 0.03, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + r * 0.27, cy - r * 0.10, r * 0.03, 0, 7); ctx.fill();
+    // blush
+    ctx.fillStyle = "rgba(255,120,150,0.45)";
+    ctx.beginPath(); ctx.arc(cx - r * 0.46, cy + r * 0.12, r * 0.11, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + r * 0.46, cy + r * 0.12, r * 0.11, 0, 7); ctx.fill();
+    // smile
+    ctx.strokeStyle = eyeC; ctx.lineWidth = Math.max(1.5, r * 0.06); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(cx, cy + r * 0.04, r * 0.22, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  }
+
+  function fillBlob(cx, cy, r, color) {
+    // a wobbly slime/blob body with a bumpy bottom
+    ctx.beginPath();
+    ctx.moveTo(cx - r, cy + r * 0.55);
+    ctx.lineTo(cx - r, cy);
+    ctx.arc(cx, cy, r, Math.PI, 0, false);
+    ctx.lineTo(cx + r, cy + r * 0.55);
+    ctx.quadraticCurveTo(cx + r * 0.66, cy + r * 0.95, cx + r * 0.33, cy + r * 0.6);
+    ctx.quadraticCurveTo(cx, cy + r * 1.0, cx - r * 0.33, cy + r * 0.6);
+    ctx.quadraticCurveTo(cx - r * 0.66, cy + r * 0.95, cx - r, cy + r * 0.55);
+    ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
+  }
+  function starShape(cx, cy, r, color) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const ang = -Math.PI / 2 + i * Math.PI / 5;
+      const rad = i % 2 === 0 ? r : r * 0.45;
+      const px = cx + Math.cos(ang) * rad, py = cy + Math.sin(ang) * rad;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  }
+  function heartPath(hx, hy, hr) {
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + hr * 0.75);
+    ctx.bezierCurveTo(hx - hr * 1.3, hy - hr * 0.35, hx - hr * 0.35, hy - hr * 0.95, hx, hy - hr * 0.2);
+    ctx.bezierCurveTo(hx + hr * 0.35, hy - hr * 0.95, hx + hr * 1.3, hy - hr * 0.35, hx, hy + hr * 0.75);
+    ctx.closePath();
+  }
+
+  const ART = {
+    blobby: function (cx, cy, r) { fillBlob(cx, cy, r, "#7ed957"); kawaiiFace(cx, cy, r); },
+
+    star: function (cx, cy, r) { starShape(cx, cy, r, "#ffd93b"); kawaiiFace(cx, cy - r * 0.05, r * 0.8); },
+
+    ghost: function (cx, cy, r) {
+      ctx.beginPath();
+      ctx.arc(cx, cy - r * 0.1, r, Math.PI, 0, false);
+      ctx.lineTo(cx + r, cy + r * 0.6);
+      for (let i = 0; i < 4; i++) {
+        const x0 = cx + r - (i * 2 + 1) * (r / 4);
+        const x1 = cx + r - (i * 2 + 2) * (r / 4);
+        ctx.quadraticCurveTo((x0 + x1) / 2, cy + r * (i % 2 ? 0.6 : 0.95), x1, cy + r * 0.6);
+      }
+      ctx.closePath(); ctx.fillStyle = "#f5f6ff"; ctx.fill();
+      kawaiiFace(cx, cy - r * 0.05, r * 0.9);
+    },
+
+    heart: function (cx, cy, r) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + r * 0.7);
+      ctx.bezierCurveTo(cx - r * 1.3, cy - r * 0.3, cx - r * 0.4, cy - r * 0.9, cx, cy - r * 0.25);
+      ctx.bezierCurveTo(cx + r * 0.4, cy - r * 0.9, cx + r * 1.3, cy - r * 0.3, cx, cy + r * 0.7);
+      ctx.closePath(); ctx.fillStyle = "#ff6b9d"; ctx.fill();
+      kawaiiFace(cx, cy - r * 0.1, r * 0.7);
+    },
+
+    cloud: function (cx, cy, r) {
+      ctx.fillStyle = "#ffffff";
+      [[0, 0, 0.75], [-0.7, 0.1, 0.55], [0.7, 0.1, 0.55], [-0.35, -0.3, 0.5], [0.35, -0.3, 0.5]]
+        .forEach(function (b) { ctx.beginPath(); ctx.arc(cx + b[0] * r, cy + b[1] * r, b[2] * r, 0, 7); ctx.fill(); });
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(cx - r * 0.9, cy, r * 1.8, r * 0.35);
+      kawaiiFace(cx, cy, r * 0.7);
+    },
+
+    bcat: function (cx, cy, r) {
+      ctx.fillStyle = "#b39ddb";
+      // ears
+      ctx.beginPath(); ctx.moveTo(cx - r * 0.7, cy - r * 0.4); ctx.lineTo(cx - r * 0.3, cy - r * 0.95); ctx.lineTo(cx - r * 0.05, cy - r * 0.4); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + r * 0.7, cy - r * 0.4); ctx.lineTo(cx + r * 0.3, cy - r * 0.95); ctx.lineTo(cx + r * 0.05, cy - r * 0.4); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, r * 0.85, 0, 7); ctx.fill();
+      // whiskers
+      ctx.strokeStyle = "rgba(90,60,120,0.6)"; ctx.lineWidth = r * 0.05;
+      [-1, 1].forEach(function (s) {
+        ctx.beginPath(); ctx.moveTo(cx + s * r * 0.5, cy + r * 0.05); ctx.lineTo(cx + s * r * 1.0, cy - r * 0.05); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + s * r * 0.5, cy + r * 0.2); ctx.lineTo(cx + s * r * 1.0, cy + r * 0.22); ctx.stroke();
+      });
+      kawaiiFace(cx, cy + r * 0.05, r * 0.75);
+    },
+
+    planet: function (cx, cy, r) {
+      ctx.save(); ctx.strokeStyle = "#ffb347"; ctx.lineWidth = r * 0.16;
+      ctx.translate(cx, cy); ctx.rotate(-0.35);
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 1.35, r * 0.5, 0, 0, 7); ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.arc(cx, cy, r * 0.8, 0, 7); ctx.fillStyle = "#5b8dff"; ctx.fill();
+      kawaiiFace(cx, cy, r * 0.7);
+    },
+
+    dino: function (cx, cy, r) {
+      ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.78, r, 0, 0, 7); ctx.fillStyle = "#8ee6c8"; ctx.fill();
+      ctx.fillStyle = "rgba(80,180,150,0.7)";
+      [[-0.3, -0.4, 0.14], [0.35, -0.2, 0.12], [-0.1, 0.3, 0.13], [0.3, 0.45, 0.1]]
+        .forEach(function (s) { ctx.beginPath(); ctx.arc(cx + s[0] * r, cy + s[1] * r, s[2] * r, 0, 7); ctx.fill(); });
+      kawaiiFace(cx, cy - r * 0.05, r * 0.7);
+    },
+
+    rainbow: function (cx, cy, r) {
+      const cols = ["#ff5a5a", "#ffb347", "#ffe14d", "#7ed957", "#5b8dff", "#b06bff"];
+      ctx.lineWidth = r * 0.14;
+      cols.forEach(function (c, i) {
+        ctx.strokeStyle = c;
+        ctx.beginPath(); ctx.arc(cx, cy + r * 0.5, r * (1.05 - i * 0.15), Math.PI, 0, false); ctx.stroke();
+      });
+      // little cloud feet
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(cx - r * 0.95, cy + r * 0.55, r * 0.3, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + r * 0.95, cy + r * 0.55, r * 0.3, 0, 7); ctx.fill();
+      kawaiiFace(cx, cy + r * 0.1, r * 0.5);
+    },
+
+    gem: function (cx, cy, r) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r, cy - r * 0.2);
+      ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r, cy - r * 0.2); ctx.closePath();
+      ctx.fillStyle = "#4be3d0"; ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = r * 0.05;
+      ctx.beginPath(); ctx.moveTo(cx - r, cy - r * 0.2); ctx.lineTo(cx + r, cy - r * 0.2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.stroke();
+      kawaiiFace(cx, cy, r * 0.55);
+    },
+
+    moon: function (cx, cy, r) {
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fillStyle = "#ffe98a"; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + r * 0.45, cy - r * 0.15, r * 0.85, 0, 7);
+      ctx.fillStyle = "#2a1a5e"; ctx.fill();
+      // face on the crescent (left side)
+      kawaiiFace(cx - r * 0.25, cy + r * 0.05, r * 0.55);
+    },
+
+    crownjelly: function (cx, cy, r) {
+      fillBlob(cx, cy + r * 0.1, r * 0.9, "#c77dff");
+      // little gold crown on top
+      ctx.fillStyle = "#ffd93b";
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.55, cy - r * 0.7);
+      ctx.lineTo(cx - r * 0.55, cy - r * 1.15); ctx.lineTo(cx - r * 0.25, cy - r * 0.8);
+      ctx.lineTo(cx, cy - r * 1.25); ctx.lineTo(cx + r * 0.25, cy - r * 0.8);
+      ctx.lineTo(cx + r * 0.55, cy - r * 1.15); ctx.lineTo(cx + r * 0.55, cy - r * 0.7);
+      ctx.closePath(); ctx.fill();
+      kawaiiFace(cx, cy + r * 0.05, r * 0.72);
+    },
+
+    // ---- Laylah's own design: a puppy hugging a heart ----
+    puppylove: function (cx, cy, r) {
+      const s = r;
+      ctx.save(); ctx.translate(cx, cy);
+      const BROWN = "#c98a52", DARK = "#9c6636", LIGHT = "#eccea4", RED = "#e5322f", NOSE = "#3a2b2b";
+
+      // wagging tail (behind the body)
+      ctx.strokeStyle = BROWN; ctx.lineWidth = 0.16 * s; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(0.55 * s, 0.55 * s);
+      ctx.quadraticCurveTo(1.15 * s, 0.45 * s, 1.05 * s, -0.05 * s); ctx.stroke();
+
+      // sitting body + light belly
+      ctx.fillStyle = BROWN; ctx.beginPath(); ctx.ellipse(0, 0.45 * s, 0.82 * s, 0.72 * s, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = LIGHT; ctx.beginPath(); ctx.ellipse(0, 0.58 * s, 0.5 * s, 0.5 * s, 0, 0, 7); ctx.fill();
+
+      // back feet
+      ctx.fillStyle = LIGHT;
+      ctx.beginPath(); ctx.ellipse(-0.52 * s, 0.98 * s, 0.24 * s, 0.15 * s, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0.52 * s, 0.98 * s, 0.24 * s, 0.15 * s, 0, 0, 7); ctx.fill();
+
+      // the heart she's hugging
+      ctx.fillStyle = RED; heartPath(0, 0.5 * s, 0.46 * s); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.35)"; // shine
+      ctx.beginPath(); ctx.ellipse(-0.16 * s, 0.32 * s, 0.09 * s, 0.13 * s, -0.4, 0, 7); ctx.fill();
+
+      // front paws wrapped around the heart
+      ctx.fillStyle = LIGHT;
+      ctx.beginPath(); ctx.ellipse(-0.44 * s, 0.55 * s, 0.19 * s, 0.15 * s, -0.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0.44 * s, 0.55 * s, 0.19 * s, 0.15 * s, 0.5, 0, 7); ctx.fill();
+
+      // head
+      ctx.fillStyle = BROWN; ctx.beginPath(); ctx.ellipse(0, -0.35 * s, 0.62 * s, 0.58 * s, 0, 0, 7); ctx.fill();
+      // muzzle
+      ctx.fillStyle = LIGHT; ctx.beginPath(); ctx.ellipse(0, -0.12 * s, 0.34 * s, 0.26 * s, 0, 0, 7); ctx.fill();
+      // brown patch around one eye (like her drawing)
+      ctx.fillStyle = DARK; ctx.beginPath(); ctx.ellipse(0.24 * s, -0.42 * s, 0.26 * s, 0.3 * s, 0, 0, 7); ctx.fill();
+      // floppy ears
+      ctx.fillStyle = DARK;
+      ctx.beginPath(); ctx.ellipse(-0.52 * s, -0.4 * s, 0.2 * s, 0.36 * s, -0.6, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0.52 * s, -0.4 * s, 0.2 * s, 0.36 * s, 0.6, 0, 7); ctx.fill();
+
+      // eyes + sparkles
+      ctx.fillStyle = "#2a2020";
+      ctx.beginPath(); ctx.arc(-0.22 * s, -0.34 * s, 0.12 * s, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(0.24 * s, -0.34 * s, 0.12 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.beginPath(); ctx.arc(-0.25 * s, -0.38 * s, 0.04 * s, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(0.21 * s, -0.38 * s, 0.04 * s, 0, 7); ctx.fill();
+      // nose + mouth + tongue
+      ctx.fillStyle = NOSE; ctx.beginPath(); ctx.ellipse(0, -0.16 * s, 0.1 * s, 0.08 * s, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = NOSE; ctx.lineWidth = 0.035 * s;
+      ctx.beginPath(); ctx.moveTo(0, -0.08 * s); ctx.lineTo(0, -0.02 * s); ctx.stroke();
+      ctx.fillStyle = "#ff7d8a"; ctx.beginPath(); ctx.ellipse(0, 0.03 * s, 0.08 * s, 0.06 * s, 0, 0, 7); ctx.fill();
+      // blushy cheeks
+      ctx.fillStyle = "rgba(255,120,150,0.4)";
+      ctx.beginPath(); ctx.arc(-0.42 * s, -0.13 * s, 0.1 * s, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(0.42 * s, -0.13 * s, 0.1 * s, 0, 7); ctx.fill();
+
+      ctx.restore();
+    },
+  };
+
+  // =====================================================================
+  //  THE CATALOG  (id, price, and how to draw it)
+  //   - type "text" = a normal keyboard emoji
+  //   - type "art"  = one of our hand-drawn characters above
+  //   Prices are BIG now, so unlocking everything takes real saving!
+  // =====================================================================
+  const CATALOG = [
+    // ----- free starters -----
+    { id: "😀", type: "text", emoji: "😀", price: 0 },
+    { id: "🐶", type: "text", emoji: "🐶", price: 0 },
+    { id: "🍎", type: "text", emoji: "🍎", price: 0 },
+    { id: "⭐", type: "text", emoji: "⭐", price: 0 },
+    { id: "🌈", type: "text", emoji: "🌈", price: 0 },
+    { id: "🐱", type: "text", emoji: "🐱", price: 0 },
+    { id: "🍕", type: "text", emoji: "🍕", price: 0 },
+    { id: "🐸", type: "text", emoji: "🐸", price: 0 },
+    // ----- unlockable cuties (rising prices) -----
+    { id: "blobby",   type: "art", name: "Blobby",      price: 250 },
+    { id: "🍩",       type: "text", emoji: "🍩",        price: 350 },
+    { id: "star",     type: "art", name: "Star Buddy",  price: 450 },
+    { id: "ghost",    type: "art", name: "Ghosty",      price: 600 },
+    { id: "🚀",       type: "text", emoji: "🚀",        price: 800 },
+    { id: "heart",    type: "art", name: "Hearty",      price: 1000 },
+    { id: "cloud",    type: "art", name: "Cloud Puff",  price: 1400 },
+    { id: "bcat",     type: "art", name: "Bubble Cat",  price: 1900 },
+    { id: "🦄",       type: "text", emoji: "🦄",        price: 2500 },
+    { id: "planet",   type: "art", name: "Planet Pal",  price: 3200 },
+    { id: "dino",     type: "art", name: "Dino Egg",    price: 4200 },
+    { id: "🐉",       type: "text", emoji: "🐉",        price: 5500 },
+    { id: "rainbow",  type: "art", name: "Rainbow",     price: 7000 },
+    { id: "gem",      type: "art", name: "Sparkle Gem", price: 9000 },
+    { id: "moon",     type: "art", name: "Moon Buddy",  price: 12000 },
+    { id: "crownjelly", type: "art", name: "Crown Jelly", price: 18000 },
+    // ⭐ Laylah's own design — the rarest, most special prize in the whole game!
+    { id: "puppylove", type: "art", name: "Puppy Love ★ by Laylah", price: 30000 },
+  ];
+  const BYID = {};
+  CATALOG.forEach(function (c) { BYID[c.id] = c; });
+  const STARTERS = CATALOG.filter(function (c) { return c.price === 0; }).map(function (c) { return c.id; });
+
+  // draw any catalog item by its id, centered at (x,y), sized to sizePx tall
+  function renderItem(id, x, y, sizePx) {
+    const item = BYID[id];
+    if (!item) return;
+    if (item.type === "art") { ART[item.id](x, y, sizePx * 0.5); }
+    else {
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = sizePx + "px serif";
+      ctx.fillText(item.emoji, x, y);
+    }
+  }
+  function itemLabel(id) {
+    const item = BYID[id];
+    return item.type === "art" ? item.name : item.emoji;
+  }
+
+  const LEVEL_GOALS = [0, 100, 250, 450, 700, 1000, 1400, 1900];
+
+  // =====================================================================
+  //  SAVED PROGRESS  (localStorage — no login needed)
+  // =====================================================================
+  const SAVE_KEY = "emojiCatchSave2";   // v2 because the catalog changed
+  let save;
+  function loadSave() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      save = raw ? JSON.parse(raw) : { points: 0, unlocked: [] };
+    } catch (e) { save = { points: 0, unlocked: [] }; }
+    const set = new Set(save.unlocked);
+    STARTERS.forEach(function (e) { set.add(e); });
+    save.unlocked = Array.from(set);
+    if (typeof save.points !== "number") save.points = 0;
+    if (typeof save.muted !== "boolean") save.muted = false;
+  }
+  function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+  function owned(id) { return save.unlocked.includes(id); }
+
+  // =====================================================================
+  //  SCREENS
+  // =====================================================================
+  let screen = "start";
+  let storeReturn = "start";
+  let storeMsg = "";
+  let pendingBuy = null;
+
+  let game;
+  function startGame() {
+    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false };
+    pickTargets(); screen = "playing";
+  }
+  function pickTargets() {
+    const howMany = Math.min(game.level, 4, save.unlocked.length);
+    const shuffled = [...save.unlocked].sort(function () { return Math.random() - 0.5; });
+    game.targets = shuffled.slice(0, howMany);
+  }
+  function fallSpeed()  { return 1.4 + game.level * 0.5; }
+  function spawnEvery() { return Math.max(28, 70 - game.level * 6); }
+
+  // =====================================================================
+  //  GAME LOOP
+  // =====================================================================
+  function loop() {
+    if (screen === "playing" && !game.paused) { if (game.pause > 0) game.pause--; else update(); }
+    draw();
+    requestAnimationFrame(loop);
+  }
+  function update() {
+    game.spawnTimer++;
+    if (game.spawnTimer >= spawnEvery()) { game.spawnTimer = 0; spawnEmoji(); }
+    for (const e of game.falling) e.y += fallSpeed();
+    game.falling = game.falling.filter(function (e) {
+      if (e.y - 30 > H) {
+        if (game.targets.includes(e.id)) {
+          game.score = Math.max(0, game.score - 5);
+          addFloater(e.x, H - 70, "-5", "#ff4d4d", 40, 80);
+        }
+        return false;
+      }
+      return true;
+    });
+    game.floaters = game.floaters.filter(function (f) { f.y -= 0.8; f.life -= 1; return f.life > 0; });
+    if (game.flash > 0) game.flash -= 0.05;
+    const nextGoal = LEVEL_GOALS[game.level];
+    if (nextGoal !== undefined && game.score >= nextGoal) {
+      game.level++; pickTargets();
+      game.pause = 108; game.falling = []; game.floaters = []; game.spawnTimer = 0;
+      playLevelUp();
+    }
+  }
+  function spawnEmoji() {
+    let id;
+    if (Math.random() < 0.45) id = game.targets[Math.floor(Math.random() * game.targets.length)];
+    else id = save.unlocked[Math.floor(Math.random() * save.unlocked.length)];
+    game.falling.push({ id: id, x: 30 + Math.random() * (W - 60), y: -20, size: 44 });
+  }
+  function addFloater(x, y, text, color, size, life) {
+    life = life || 45;
+    game.floaters.push({ x: x, y: y, text: text, color: color, size: size || 26, life: life, maxLife: life });
+  }
+
+  // =====================================================================
+  //  TAPPING
+  // =====================================================================
+  function handleTap(clientX, clientY) {
+    ensureAudio();   // make sure sound is ready (needs a tap to start on iPads)
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * (W / rect.width);
+    const y = (clientY - rect.top) * (H / rect.height);
+    if (screen === "playing")  return tapGame(x, y);
+    if (screen === "start")    return tapStart(x, y);
+    if (screen === "gameover") return tapGameOver(x, y);
+    if (screen === "store")    return tapStore(x, y);
+    if (screen === "collection") return tapCollection(x, y);
+  }
+  function tapGame(x, y) {
+    // If paused, only the pause-menu buttons work
+    if (game.paused) {
+      if (hit(RESUME_BTN, x, y)) game.paused = false;
+      else if (hit(QUIT_BTN, x, y)) screen = "start";
+      return;
+    }
+    if (game.pause > 0) return;                     // ignore taps during level-up freeze
+    if (hit(MUTE_BTN, x, y)) { toggleMute(); return; }
+    if (hit(PAUSE_BTN, x, y)) { game.paused = true; return; }
+    for (let i = game.falling.length - 1; i >= 0; i--) {
+      const e = game.falling[i];
+      const dx = x - e.x, dy = y - e.y;
+      if (dx * dx + dy * dy < e.size * e.size) {
+        if (game.targets.includes(e.id)) {
+          game.score += 10; game.earned += 10; save.points += 10; writeSave();
+          addFloater(e.x, e.y, "+10", "#2ecc71");
+          playBoing();
+        } else { loseHeart(); addFloater(e.x, e.y, "💔", "#ff4d4d"); playWrong(); }
+        game.falling.splice(i, 1);
+        return;
+      }
+    }
+  }
+  function loseHeart() { game.hearts--; game.flash = 1; if (game.hearts <= 0) { game.hearts = 0; screen = "gameover"; } }
+
+  function tapStart(x, y) {
+    if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
+    if (hit(BTN_PLAY, x, y)) return startGame();
+    if (hit(BTN_STORE, x, y)) return openStore("start");
+    if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; return; }
+  }
+  function tapCollection(x, y) {
+    if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
+    if (hit(STORE_PLAY, x, y)) return startGame();
+  }
+  function tapGameOver(x, y) { if (hit(BTN_PLAY, x, y)) return startGame(); if (hit(BTN_STORE, x, y)) return openStore("gameover"); }
+  function openStore(from) { storeReturn = from; screen = "store"; pendingBuy = null; storeMsg = ""; scrollY = 0; }
+
+  function tapStore(x, y) {
+    if (pendingBuy) {
+      if (hit(BUY_YES, x, y)) {
+        save.points -= pendingBuy.price; save.unlocked.push(pendingBuy.id); writeSave();
+        storeMsg = "Unlocked " + itemLabel(pendingBuy.id) + "!"; pendingBuy = null; playBuy();
+      } else if (hit(BUY_NO, x, y)) { pendingBuy = null; }
+      return;
+    }
+    if (hit(STORE_BACK, x, y)) { screen = storeReturn; return; }
+    if (hit(STORE_PLAY, x, y)) { return startGame(); }
+    for (let i = 0; i < CATALOG.length; i++) {
+      const r = tileRect(i);
+      if (y > STORE_HEADER && hit(r, x, y)) {
+        const item = CATALOG[i];
+        if (owned(item.id)) storeMsg = "You already have " + itemLabel(item.id);
+        else if (save.points >= item.price) { pendingBuy = item; storeMsg = ""; }
+        else storeMsg = "Save up " + item.price + " for " + itemLabel(item.id) + "!";
+        return;
+      }
+    }
+  }
+
+  // =====================================================================
+  //  DRAWING
+  // =====================================================================
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    if (screen === "start")    drawStart();
+    if (screen === "playing")  drawGame();
+    if (screen === "gameover") drawGameOver();
+    if (screen === "store")    drawStore();
+    if (screen === "collection") drawCollection();
+  }
+
+  function drawGame() {
+    for (const e of game.falling) renderItem(e.id, e.x, e.y, e.size);
+    for (const f of game.floaters) {
+      ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
+      ctx.fillStyle = f.color; ctx.font = "bold " + f.size + "px -apple-system, Arial";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(f.text, f.x, f.y); ctx.globalAlpha = 1;
+    }
+    drawTopBar();
+    if (game.flash > 0) { ctx.fillStyle = "rgba(255,0,0," + (game.flash * 0.35) + ")"; ctx.fillRect(0, 0, W, H); }
+    if (game.pause > 0) drawLevelUp();
+    // the little pause + mute buttons (hidden during level-up freeze and while paused)
+    if (game.pause === 0 && !game.paused) {
+      drawButton(PAUSE_BTN, "⏸", "#6c5ce7", 18);
+      drawButton(MUTE_BTN, save.muted ? "🔇" : "🔊", "#6c5ce7", 16);
+    }
+    if (game.paused) drawPauseMenu();
+  }
+
+  function drawPauseMenu() {
+    ctx.fillStyle = "rgba(27,16,53,0.92)"; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "white"; ctx.font = "bold 46px -apple-system, Arial";
+    ctx.fillText("⏸ Paused", W / 2, H / 2 - 100);
+    drawButton(RESUME_BTN, "▶  Resume", "#2ecc71");
+    drawButton(QUIT_BTN, "⏹  Quit to Menu", "#e74c3c");
+  }
+  function drawTopBar() {
+    ctx.fillStyle = "rgba(27,16,53,0.9)"; ctx.fillRect(0, 0, W, 76);
+    ctx.textBaseline = "middle"; ctx.fillStyle = "white"; ctx.textAlign = "left";
+    ctx.font = "bold 16px -apple-system, Arial";
+    ctx.fillText("Find:", 12, 24);
+    // draw each target character next to "Find:"
+    let tx = 66;
+    for (const id of game.targets) { renderItem(id, tx, 24, 30); tx += 36; }
+    // hearts
+    ctx.textAlign = "right"; ctx.font = "20px serif";
+    ctx.fillText("❤️".repeat(game.hearts) || "—", W - 12, 24);
+    // score + piggy bank
+    ctx.font = "bold 15px -apple-system, Arial"; ctx.fillStyle = "#ffd93b"; ctx.textAlign = "left";
+    ctx.fillText("Lvl " + game.level + " · ⭐ " + game.score, 12, 58);
+    ctx.textAlign = "right"; ctx.fillStyle = "#ffe08a";
+    ctx.fillText("🪙 " + save.points, W - 12, 58);
+  }
+  function drawLevelUp() {
+    ctx.fillStyle = "rgba(27,16,53,0.9)"; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const t = game.pause / 108, pop = 1 + Math.sin((1 - t) * Math.PI) * 0.15;
+    ctx.save(); ctx.translate(W / 2, H / 2 - 100); ctx.scale(pop, pop);
+    ctx.fillStyle = "#ffd93b"; ctx.font = "bold 54px -apple-system, Arial";
+    ctx.fillText("LEVEL " + game.level + "!", 0, 0); ctx.restore();
+    ctx.fillStyle = "white"; ctx.font = "bold 22px -apple-system, Arial";
+    ctx.fillText("Now find these:", W / 2, H / 2 - 30);
+    let tx = W / 2 - (game.targets.length - 1) * 33;
+    for (const id of game.targets) { renderItem(id, tx, H / 2 + 30, 56); tx += 66; }
+    ctx.fillStyle = "#7ee0ff"; ctx.font = "bold 20px -apple-system, Arial";
+    ctx.fillText("Get ready…", W / 2, H / 2 + 110);
+  }
+
+  function drawStart() {
+    bgFill();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "white"; ctx.font = "bold 46px -apple-system, Arial";
+    ctx.fillText("🎯 Emoji", W / 2, 120); ctx.fillText("Catch", W / 2, 175);
+    // show a few cuties as decoration
+    ART.blobby(W / 2 - 105, 235, 26); ART.star(W / 2 - 35, 235, 24);
+    ART.puppylove(W / 2 + 35, 235, 26); ART.heart(W / 2 + 105, 235, 24);
+    ctx.fillStyle = "#ffe08a"; ctx.font = "bold 24px -apple-system, Arial";
+    ctx.fillText("🪙 " + save.points + " points", W / 2, 295);
+    drawButton(BTN_PLAY, "▶  Play", "#2ecc71");
+    drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
+    drawButton(BTN_COLLECTION, "🎒  My Cuties", "#f4a63b");
+    drawButton(MUTE_MENU, save.muted ? "🔇" : "🔊", "#6c5ce7", 18);
+  }
+
+  function drawCollection() {
+    bgFill();
+    // every emoji you OWN (starters + anything bought)
+    const items = CATALOG.filter(function (c) { return owned(c.id); });
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i], r = tileRect(i);
+      roundRect(r.x, r.y, r.w, r.h, 12); ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fill();
+      renderItem(item.id, r.x + r.w / 2, r.y + r.h / 2 - 6, 38);
+      if (item.type === "art") {   // show the cutie's name underneath
+        let nm = item.name.replace(" ★ by Laylah", "");
+        if (nm.length > 11) nm = nm.slice(0, 10) + "…";
+        ctx.fillStyle = "#cdd6ff"; ctx.font = "bold 9px -apple-system, Arial";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(nm, r.x + r.w / 2, r.y + r.h - 11);
+      }
+    }
+    // header on top
+    ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
+    drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
+    drawButton(STORE_PLAY, "▶ Play", "#2ecc71", 18);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+    ctx.fillText("🎒 My Cuties   " + items.length + " / " + CATALOG.length, W / 2, 30);
+  }
+  function drawGameOver() {
+    bgFill();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "white"; ctx.font = "bold 44px -apple-system, Arial";
+    ctx.fillText("Game Over", W / 2, 120);
+    ctx.font = "22px -apple-system, Arial";
+    ctx.fillText("Score: " + game.score + "   ·   Level " + game.level, W / 2, 175);
+    ctx.fillStyle = "#8effa0"; ctx.font = "bold 22px -apple-system, Arial";
+    ctx.fillText("You earned 🪙 " + game.earned + " this game!", W / 2, 215);
+    ctx.fillStyle = "#ffe08a";
+    ctx.fillText("Piggy bank: 🪙 " + save.points, W / 2, 248);
+    drawButton(BTN_PLAY, "▶  Play Again", "#2ecc71");
+    drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
+  }
+
+  function drawStore() {
+    bgFill();
+    // tiles
+    for (let i = 0; i < CATALOG.length; i++) {
+      const item = CATALOG[i], r = tileRect(i);
+      const isOwned = owned(item.id), canAfford = save.points >= item.price;
+      let bg = "rgba(255,255,255,0.12)";
+      if (isOwned) bg = "rgba(46,204,113,0.30)";
+      else if (!canAfford) bg = "rgba(255,255,255,0.05)";
+      roundRect(r.x, r.y, r.w, r.h, 12); ctx.fillStyle = bg; ctx.fill();
+      ctx.globalAlpha = isOwned || canAfford ? 1 : 0.4;
+      renderItem(item.id, r.x + r.w / 2, r.y + r.h / 2 - 8, 38);
+      ctx.globalAlpha = 1;
+      ctx.font = "bold 12px -apple-system, Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (isOwned) { ctx.fillStyle = "#8effa0"; ctx.fillText("✓ owned", r.x + r.w / 2, r.y + r.h - 13); }
+      else { ctx.fillStyle = canAfford ? "#ffe08a" : "#bbb"; ctx.fillText("🪙" + item.price, r.x + r.w / 2, r.y + r.h - 13); }
+    }
+    // header on top of tiles
+    ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
+    drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
+    drawButton(STORE_PLAY, "▶ Play", "#2ecc71", 18);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+    ctx.fillText("🛒 Store   🪙 " + save.points, W / 2, 30);
+
+    if (storeMsg) {
+      ctx.fillStyle = "rgba(27,16,53,0.85)"; ctx.fillRect(0, H - 40, W, 40);
+      ctx.fillStyle = "white"; ctx.font = "bold 15px -apple-system, Arial"; ctx.textAlign = "center";
+      ctx.fillText(storeMsg, W / 2, H - 20);
+    }
+    if (pendingBuy) {
+      ctx.fillStyle = "rgba(0,0,0,0.78)"; ctx.fillRect(0, 0, W, H);
+      renderItem(pendingBuy.id, W / 2, H / 2 - 120, 90);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "white";
+      ctx.font = "bold 24px -apple-system, Arial";
+      ctx.fillText("Buy " + itemLabel(pendingBuy.id) + "?", W / 2, H / 2 - 50);
+      ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+      ctx.fillText("Cost: 🪙 " + pendingBuy.price, W / 2, H / 2 - 15);
+      drawButton(BUY_YES, "✓ Yes", "#2ecc71");
+      drawButton(BUY_NO, "✗ No", "#e74c3c");
+    }
+  }
+
+  // ---- helpers ----
+  function bgFill() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#2a1a5e"); g.addColorStop(1, "#1b1035");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function drawButton(rect, label, bg, fontSize) {
+    roundRect(rect.x, rect.y, rect.w, rect.h, 16); ctx.fillStyle = bg; ctx.fill();
+    ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "bold " + (fontSize || 24) + "px -apple-system, Arial";
+    ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 1);
+  }
+  function hit(rect, x, y) { return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h; }
+
+  const BTN_PLAY  = { x: 90, y: 330, w: 240, h: 62 };
+  const BTN_STORE = { x: 90, y: 404, w: 240, h: 62 };
+  const BTN_COLLECTION = { x: 90, y: 478, w: 240, h: 62 };
+  const PAUSE_BTN = { x: W - 46, y: 86, w: 36, h: 34 };
+  const MUTE_BTN  = { x: W - 46, y: 126, w: 36, h: 34 };
+  const MUTE_MENU = { x: W - 52, y: 14, w: 40, h: 34 };
+  const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
+  const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
+  const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
+  const STORE_PLAY = { x: W - 108, y: 10, w: 96, h: 40 };
+  const BUY_YES = { x: 40, y: H / 2 + 20, w: 150, h: 64 };
+  const BUY_NO  = { x: W - 190, y: H / 2 + 20, w: 150, h: 64 };
+  const STORE_HEADER = 58;
+  let scrollY = 0;
+
+  // 5 columns so all the cuties fit on screen without scrolling
+  function tileRect(i) {
+    const cols = 5, tileW = 74, tileH = 82, gap = 8, startX = 11, startY = STORE_HEADER + 8, rowGap = 8;
+    const c = i % cols, r = Math.floor(i / cols);
+    return { x: startX + c * (tileW + gap), y: startY + r * (tileH + rowGap), w: tileW, h: tileH };
+  }
+
+  // =====================================================================
+  //  SOUND EFFECTS  (made with code — no sound files needed!)
+  //  The browser can create beeps and boings on the fly.
+  // =====================================================================
+  let ac = null, masterGain = null, audioUnlocked = false;
+  function ensureAudio() {
+    if (!ac) {
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = ac.createGain(); masterGain.gain.value = 0.7;
+        masterGain.connect(ac.destination);
+      } catch (e) { ac = null; }
+    }
+    if (!ac) return;
+    // iPads need audio "woken up" by a tap — resume the sound engine...
+    if (ac.state === "suspended") ac.resume();
+    // ...and play a tiny burst of silence, which fully unlocks audio on iOS.
+    if (!audioUnlocked) {
+      try {
+        const b = ac.createBuffer(1, 1, 22050);
+        const s = ac.createBufferSource(); s.buffer = b;
+        s.connect(ac.destination); s.start(0);
+        audioUnlocked = true;
+      } catch (e) {}
+    }
+  }
+  // a simple tone that slides from one pitch to another
+  function beep(f1, f2, type, dur, vol, when) {
+    if (!ac || save.muted) return;
+    const t = ac.currentTime + (when || 0);
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(1, f2), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  // the "boing!" — pitch springs up then bounces back down
+  function playBoing() {
+    if (!ac || save.muted) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = "triangle";
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(680, t + 0.06);
+    o.frequency.exponentialRampToValueAtTime(200, t + 0.24);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.32);
+  }
+  function playWrong()   { beep(180, 90, "square", 0.22, 0.25); }
+  function playLevelUp() { beep(523, 523, "triangle", 0.12, 0.3, 0); beep(659, 659, "triangle", 0.12, 0.3, 0.12); beep(784, 784, "triangle", 0.18, 0.3, 0.24); }
+  function playBuy()     { beep(784, 784, "triangle", 0.1, 0.3, 0); beep(1047, 1047, "triangle", 0.16, 0.3, 0.1); }
+  function toggleMute()  { save.muted = !save.muted; writeSave(); if (!save.muted) playBoing(); }
+
+  canvas.addEventListener("touchstart", function (e) { e.preventDefault(); const t = e.changedTouches[0]; handleTap(t.clientX, t.clientY); });
+  canvas.addEventListener("mousedown", function (e) { handleTap(e.clientX, e.clientY); });
+
+  loadSave();
+  loop();
+  </script>
+</body>
+</html>
