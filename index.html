@@ -1049,38 +1049,117 @@
   function playBuy()     { beep(784, 784, "triangle", 0.1, 0.3, 0); beep(1047, 1047, "triangle", 0.16, 0.3, 0.1); }
   function toggleMute()  { save.muted = !save.muted; writeSave(); if (!save.muted) playBoing(); }
 
-  // ---- silly animal + food sounds for when you catch one ----
-  function playMeow() {  // rising-then-falling glide, like a cat
+  // ---- animal + food sounds: the browser actually SAYS the sound out loud ----
+  // (This uses the device's built-in voice, so it needs no sound files and
+  //  says a real, recognizable word — much better than beeps for a meow/woof.)
+  // ---- animal + food sounds, built from noise + filters (plays on every device) ----
+  // A quick burst of filtered white noise — the building block for barks & munches.
+  function noiseBurst(dur, type, freq, q, vol, when) {
+    if (!ac || save.muted) return;
+    const t = ac.currentTime + (when || 0);
+    const n = Math.max(1, Math.floor(ac.sampleRate * dur));
+    const buf = ac.createBuffer(1, n, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; if (q) f.Q.value = q;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(masterGain);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  // A gliding tone, optionally shaped by a bandpass filter (for vowel-ish sounds).
+  function tone(f1, f2, type, dur, vol, when, filterFreq, filterQ) {
+    if (!ac || save.muted) return;
+    const t = ac.currentTime + (when || 0);
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.linearRampToValueAtTime(f2, t + dur);
+    let node = o;
+    if (filterFreq) { const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = filterFreq; if (filterQ) bp.Q.value = filterQ; o.connect(bp); node = bp; }
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    node.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  function playMeow() {  // rising-then-falling "eee-ow" with a vowel filter sweep
     if (!ac || save.muted) return;
     const t = ac.currentTime;
-    const o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
-    o.type = "sawtooth"; lp.type = "lowpass"; lp.frequency.value = 1600;
-    o.frequency.setValueAtTime(520, t);
-    o.frequency.linearRampToValueAtTime(880, t + 0.12);
-    o.frequency.linearRampToValueAtTime(430, t + 0.38);
+    const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
+    o.type = "sawtooth"; f.type = "bandpass"; f.Q.value = 5;
+    o.frequency.setValueAtTime(650, t);
+    o.frequency.linearRampToValueAtTime(920, t + 0.14);
+    o.frequency.linearRampToValueAtTime(600, t + 0.5);
+    f.frequency.setValueAtTime(1100, t);
+    f.frequency.linearRampToValueAtTime(1900, t + 0.14);
+    f.frequency.linearRampToValueAtTime(850, t + 0.5);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.28, t + 0.04);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
-    o.connect(lp); lp.connect(g); g.connect(masterGain);
-    o.start(t); o.stop(t + 0.44);
+    g.gain.exponentialRampToValueAtTime(0.32, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    o.connect(f); f.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.57);
   }
-  function playWoof()   { beep(160, 110, "square", 0.09, 0.3, 0); beep(150, 95, "square", 0.12, 0.3, 0.13); }
-  function playRibbit() { beep(240, 90, "sawtooth", 0.09, 0.3, 0); beep(210, 80, "sawtooth", 0.1, 0.3, 0.13); }
-  function playRoar()   { beep(180, 70, "sawtooth", 0.45, 0.35, 0); beep(90, 60, "square", 0.45, 0.2, 0); }
-  function playBuzz()   { beep(150, 130, "square", 0.28, 0.22, 0); }
-  function playMagic()  { beep(800, 800, "triangle", 0.08, 0.25, 0); beep(1100, 1100, "triangle", 0.08, 0.25, 0.08); beep(1500, 1500, "triangle", 0.12, 0.25, 0.16); }
-  function playChirp()  { beep(1200, 1600, "triangle", 0.07, 0.25, 0); beep(1400, 1800, "triangle", 0.07, 0.25, 0.09); }
-  function playYum()    { beep(300, 340, "sine", 0.12, 0.32, 0); beep(360, 300, "sine", 0.2, 0.32, 0.11); }
+  function bark(when) {  // gruff downward "woof" — tonal, no noise
+    if (!ac || save.muted) return;
+    const t = ac.currentTime + when;
+    const o = ac.createOscillator(), lp = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(300, t);
+    o.frequency.exponentialRampToValueAtTime(150, t + 0.05);
+    o.frequency.exponentialRampToValueAtTime(95, t + 0.18);
+    lp.type = "lowpass"; lp.Q.value = 6;
+    lp.frequency.setValueAtTime(1500, t);
+    lp.frequency.exponentialRampToValueAtTime(500, t + 0.18);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.4, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    o.connect(lp); lp.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.22);
+  }
+  function playWoof() { bark(0); bark(0.22); }
+  function croak(f1, f2, when, dur) {  // throaty two-syllable "ri-bbit" — tonal, no wobble
+    if (!ac || save.muted) return;
+    const t = ac.currentTime + when;
+    const o = ac.createOscillator(), bp = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.linearRampToValueAtTime(f2, t + dur);
+    bp.type = "bandpass"; bp.frequency.value = 600; bp.Q.value = 4;   // throaty formant
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(bp); bp.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function playRibbit() { croak(200, 150, 0, 0.1); croak(250, 330, 0.12, 0.17); }  // "rib" (down) + "bit" (up)
+  function playRoar() { noiseBurst(0.5, "lowpass", 500, 1, 0.4, 0); tone(120, 70, "sawtooth", 0.5, 0.35, 0); }
+  function playBuzz() {
+    if (!ac || save.muted) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+    o.type = "sawtooth"; o.frequency.value = 175;
+    lfo.type = "square"; lfo.frequency.value = 50; lg.gain.value = 0.12; lfo.connect(lg); lg.connect(g.gain);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.2, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    o.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.34); lfo.start(t); lfo.stop(t + 0.34);
+  }
+  function playYum() {  // a happy "mmm-mm!" hum — warm sine, like tasting something yummy
+    tone(300, 300, "sine", 0.16, 0.34, 0);
+    tone(400, 460, "sine", 0.26, 0.36, 0.15);   // second note lifts up = delighted
+  }
 
-  // which emoji makes which sound (anything not listed just goes "boing!")
+  // Which emoji makes which sound. Anything not listed just goes "boing!"
   const SOUND_MAP = {
     "🐱": playMeow, "bcat": playMeow, "partycat": playMeow,
     "🐶": playWoof,
     "🐸": playRibbit,
     "🐉": playRoar, "dino": playRoar,
     "bee": playBuzz,
-    "🦄": playMagic, "star": playMagic, "gem": playMagic, "moon": playMagic, "potion": playMagic, "angelcloud": playMagic,
-    "penguin": playChirp, "octopus": playChirp, "narwhal": playChirp,
     "🍎": playYum, "🍕": playYum, "🍩": playYum, "avocado": playYum, "strawberry": playYum, "mushroom": playYum,
   };
   function playCatch(id) { (SOUND_MAP[id] || playBoing)(); }
