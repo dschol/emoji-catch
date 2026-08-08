@@ -1104,24 +1104,27 @@
     o.connect(f); f.connect(g); g.connect(masterGain);
     o.start(t); o.stop(t + 0.57);
   }
-  function bark(when) {  // gruff downward "woof" — tonal, no noise
+  function bark(when, base) {  // one cute little "woof" — higher & bouncy = puppy yip
     if (!ac || save.muted) return;
     const t = ac.currentTime + when;
-    const o = ac.createOscillator(), lp = ac.createBiquadFilter(), g = ac.createGain();
+    const o = ac.createOscillator(), bp = ac.createBiquadFilter(), g = ac.createGain();
     o.type = "sawtooth";
-    o.frequency.setValueAtTime(300, t);
-    o.frequency.exponentialRampToValueAtTime(150, t + 0.05);
-    o.frequency.exponentialRampToValueAtTime(95, t + 0.18);
-    lp.type = "lowpass"; lp.Q.value = 6;
-    lp.frequency.setValueAtTime(1500, t);
-    lp.frequency.exponentialRampToValueAtTime(500, t + 0.18);
+    // quick swoop up then down = a bouncy "wu-of"
+    o.frequency.setValueAtTime(base * 0.6, t);
+    o.frequency.linearRampToValueAtTime(base * 1.3, t + 0.03);
+    o.frequency.linearRampToValueAtTime(base * 0.75, t + 0.13);
+    // bright vowel sweep, like the cat's, kept high & friendly
+    bp.type = "bandpass"; bp.Q.value = 3;
+    bp.frequency.setValueAtTime(800, t);
+    bp.frequency.linearRampToValueAtTime(1600, t + 0.03);
+    bp.frequency.linearRampToValueAtTime(750, t + 0.13);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.4, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-    o.connect(lp); lp.connect(g); g.connect(masterGain);
-    o.start(t); o.stop(t + 0.22);
+    g.gain.exponentialRampToValueAtTime(0.38, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    o.connect(bp); bp.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.17);
   }
-  function playWoof() { bark(0); bark(0.22); }
+  function playWoof() { bark(0, 320); bark(0.16, 380); }  // two happy yips, second a bit higher
   function croak(f1, f2, when, dur) {  // throaty two-syllable "ri-bbit" — tonal, no wobble
     if (!ac || save.muted) return;
     const t = ac.currentTime + when;
