@@ -265,6 +265,163 @@
 
       ctx.restore();
     },
+
+    bee: function (cx, cy, r) {
+      ctx.fillStyle = "rgba(185,222,255,0.75)";
+      ctx.beginPath(); ctx.ellipse(cx - r * 0.5, cy - r * 0.5, r * 0.5, r * 0.34, -0.6, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx + r * 0.5, cy - r * 0.5, r * 0.5, r * 0.34, 0.6, 0, 7); ctx.fill();
+      ctx.fillStyle = "#ffd23b"; ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.1, r * 0.8, r * 0.68, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.1, r * 0.8, r * 0.68, 0, 0, 7); ctx.clip();
+      ctx.fillStyle = "#3a2b2b"; ctx.fillRect(cx - r, cy - r * 0.12, r * 2, r * 0.16); ctx.fillRect(cx - r, cy + r * 0.28, r * 2, r * 0.16); ctx.restore();
+      ctx.strokeStyle = "#3a2b2b"; ctx.lineWidth = r * 0.05; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(cx - r * 0.2, cy - r * 0.52); ctx.lineTo(cx - r * 0.32, cy - r * 0.85); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + r * 0.2, cy - r * 0.52); ctx.lineTo(cx + r * 0.32, cy - r * 0.85); ctx.stroke();
+      ctx.fillStyle = "#3a2b2b"; ctx.beginPath(); ctx.arc(cx - r * 0.32, cy - r * 0.88, r * 0.06, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + r * 0.32, cy - r * 0.88, r * 0.06, 0, 7); ctx.fill();
+      kawaiiFace(cx, cy, r * 0.6);
+    },
+
+    mushroom: function (cx, cy, r) {
+      ctx.fillStyle = "#f3e2c0";
+      ctx.beginPath(); ctx.moveTo(cx - r * 0.45, cy + r * 0.1);
+      ctx.quadraticCurveTo(cx - r * 0.5, cy + r * 0.9, cx - r * 0.28, cy + r * 0.95);
+      ctx.lineTo(cx + r * 0.28, cy + r * 0.95);
+      ctx.quadraticCurveTo(cx + r * 0.5, cy + r * 0.9, cx + r * 0.45, cy + r * 0.1); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#e5443c"; ctx.beginPath(); ctx.arc(cx, cy + r * 0.12, r * 0.85, Math.PI, 0, false); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      [[-0.4, -0.2, 0.14], [0.32, -0.3, 0.12], [0.52, 0.0, 0.1], [-0.05, -0.45, 0.1]]
+        .forEach(function (s) { ctx.beginPath(); ctx.arc(cx + s[0] * r, cy + s[1] * r, s[2] * r, 0, 7); ctx.fill(); });
+      kawaiiFace(cx, cy + r * 0.5, r * 0.46);
+    },
+
+    avocado: function (cx, cy, r) {
+      ctx.fillStyle = "#4c7a34"; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.72, r * 0.95, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#c7e29b"; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.52, r * 0.72, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#8a5a2b"; ctx.beginPath(); ctx.arc(cx, cy + r * 0.3, r * 0.27, 0, 7); ctx.fill();
+      kawaiiFace(cx, cy - r * 0.22, r * 0.46);
+    },
+
+    strawberry: function (cx, cy, r) {
+      ctx.fillStyle = "#e5322f"; ctx.beginPath();
+      ctx.moveTo(cx, cy + r * 0.95);
+      ctx.bezierCurveTo(cx - r * 0.9, cy + r * 0.4, cx - r * 0.8, cy - r * 0.5, cx, cy - r * 0.5);
+      ctx.bezierCurveTo(cx + r * 0.8, cy - r * 0.5, cx + r * 0.9, cy + r * 0.4, cx, cy + r * 0.95);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffe9a8";
+      [[-0.3, 0.05], [0.3, 0.05], [0, 0.3], [-0.34, 0.45], [0.34, 0.45], [0, -0.18], [-0.12, 0.6], [0.12, 0.6]]
+        .forEach(function (s) { ctx.save(); ctx.translate(cx + s[0] * r, cy + s[1] * r); ctx.rotate(0.3); ctx.beginPath(); ctx.ellipse(0, 0, r * 0.05, r * 0.09, 0, 0, 7); ctx.fill(); ctx.restore(); });
+      ctx.fillStyle = "#3fae57";
+      for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.35); ctx.lineTo(cx + i * r * 0.3, cy - r * 0.85); ctx.lineTo(cx + i * r * 0.3 + r * 0.18, cy - r * 0.4); ctx.closePath(); ctx.fill(); }
+      kawaiiFace(cx, cy + r * 0.08, r * 0.46);
+    },
+
+    cactus: function (cx, cy, r) {
+      ctx.fillStyle = "#4fae5a";
+      roundRect(cx - r * 0.28, cy - r * 0.7, r * 0.56, r * 1.2, r * 0.26); ctx.fill();
+      roundRect(cx - r * 0.72, cy - r * 0.3, r * 0.26, r * 0.55, r * 0.13); ctx.fill();
+      roundRect(cx + r * 0.46, cy - r * 0.5, r * 0.26, r * 0.55, r * 0.13); ctx.fill();
+      ctx.fillRect(cx - r * 0.5, cy - r * 0.05, r * 0.28, r * 0.16);
+      ctx.fillRect(cx + r * 0.22, cy - r * 0.22, r * 0.28, r * 0.16);
+      ctx.fillStyle = "#e08a5b"; ctx.beginPath();
+      ctx.moveTo(cx - r * 0.42, cy + r * 0.5); ctx.lineTo(cx + r * 0.42, cy + r * 0.5);
+      ctx.lineTo(cx + r * 0.32, cy + r * 0.98); ctx.lineTo(cx - r * 0.32, cy + r * 0.98); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#c9743f"; ctx.fillRect(cx - r * 0.48, cy + r * 0.42, r * 0.96, r * 0.14);
+      kawaiiFace(cx, cy - r * 0.12, r * 0.4);
+    },
+
+    penguin: function (cx, cy, r) {
+      ctx.fillStyle = "#2b2b3a"; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.72, r * 0.92, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.14, r * 0.46, r * 0.64, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#ff9f2e";
+      ctx.beginPath(); ctx.ellipse(cx - r * 0.28, cy + r * 0.92, r * 0.2, r * 0.1, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx + r * 0.28, cy + r * 0.92, r * 0.2, r * 0.1, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.02); ctx.lineTo(cx - r * 0.16, cy + r * 0.16); ctx.lineTo(cx + r * 0.16, cy + r * 0.16); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx - r * 0.22, cy - r * 0.28, r * 0.16, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.22, cy - r * 0.28, r * 0.16, 0, 7); ctx.fill();
+      ctx.fillStyle = "#2a2020"; ctx.beginPath(); ctx.arc(cx - r * 0.19, cy - r * 0.26, r * 0.08, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.26, r * 0.08, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,120,150,0.4)"; ctx.beginPath(); ctx.arc(cx - r * 0.42, cy - r * 0.02, r * 0.1, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.42, cy - r * 0.02, r * 0.1, 0, 7); ctx.fill();
+    },
+
+    robot: function (cx, cy, r) {
+      ctx.strokeStyle = "#9aa4b2"; ctx.lineWidth = r * 0.06; ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.7); ctx.lineTo(cx, cy - r * 0.95); ctx.stroke();
+      ctx.fillStyle = "#ff5a5a"; ctx.beginPath(); ctx.arc(cx, cy - r * 0.98, r * 0.1, 0, 7); ctx.fill();
+      ctx.fillStyle = "#b7c2d0"; roundRect(cx - r * 0.75, cy - r * 0.7, r * 1.5, r * 1.5, r * 0.3); ctx.fill();
+      ctx.fillStyle = "#9aa4b2"; ctx.beginPath(); ctx.arc(cx - r * 0.85, cy, r * 0.12, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.85, cy, r * 0.12, 0, 7); ctx.fill();
+      ctx.fillStyle = "#2b3a4a"; roundRect(cx - r * 0.55, cy - r * 0.45, r * 1.1, r * 0.95, r * 0.2); ctx.fill();
+      ctx.fillStyle = "#5ff0d0"; ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.05, r * 0.14, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.05, r * 0.14, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#5ff0d0"; ctx.lineWidth = r * 0.06; ctx.beginPath(); ctx.arc(cx, cy + r * 0.06, r * 0.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    },
+
+    octopus: function (cx, cy, r) {
+      ctx.fillStyle = "#b06bff"; ctx.beginPath();
+      ctx.arc(cx, cy - r * 0.1, r * 0.7, Math.PI, 0, false);
+      ctx.lineTo(cx + r * 0.7, cy + r * 0.15);
+      const bw = (1.4 * r) / 3;
+      for (let i = 0; i < 3; i++) { const xm = cx + r * 0.7 - (i + 0.5) * bw, xe = cx + r * 0.7 - (i + 1) * bw; ctx.quadraticCurveTo(xm, cy + r * 0.62, xe, cy + r * 0.15); }
+      ctx.closePath(); ctx.fill();
+      kawaiiFace(cx, cy - r * 0.1, r * 0.58);
+    },
+
+    narwhal: function (cx, cy, r) {
+      ctx.fillStyle = "#7ec8e3"; ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.1, r * 0.85, r * 0.6, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + r * 0.7, cy + r * 0.1); ctx.lineTo(cx + r * 1.05, cy - r * 0.15); ctx.lineTo(cx + r * 1.0, cy + r * 0.35); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#dff3fb"; ctx.beginPath(); ctx.ellipse(cx - r * 0.1, cy + r * 0.34, r * 0.5, r * 0.26, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#fff0c0"; ctx.beginPath(); ctx.moveTo(cx - r * 0.72, cy - r * 0.12); ctx.lineTo(cx - r * 1.15, cy - r * 0.5); ctx.lineTo(cx - r * 0.58, cy - r * 0.25); ctx.closePath(); ctx.fill();
+      kawaiiFace(cx - r * 0.12, cy, r * 0.48);
+    },
+
+    alien: function (cx, cy, r) {
+      ctx.strokeStyle = "#5fd06a"; ctx.lineWidth = r * 0.05; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(cx - r * 0.2, cy - r * 0.6); ctx.quadraticCurveTo(cx - r * 0.5, cy - r * 0.95, cx - r * 0.35, cy - r * 1.02); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + r * 0.2, cy - r * 0.6); ctx.quadraticCurveTo(cx + r * 0.5, cy - r * 0.95, cx + r * 0.35, cy - r * 1.02); ctx.stroke();
+      ctx.fillStyle = "#7ee08a"; ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 1.03, r * 0.08, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.35, cy - r * 1.03, r * 0.08, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.8, r * 0.9, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#1a1a2a";
+      ctx.save(); ctx.translate(cx - r * 0.3, cy - r * 0.05); ctx.rotate(0.4); ctx.beginPath(); ctx.ellipse(0, 0, r * 0.14, r * 0.26, 0, 0, 7); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(cx + r * 0.3, cy - r * 0.05); ctx.rotate(-0.4); ctx.beginPath(); ctx.ellipse(0, 0, r * 0.14, r * 0.26, 0, 0, 7); ctx.fill(); ctx.restore();
+      ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.beginPath(); ctx.arc(cx - r * 0.33, cy - r * 0.12, r * 0.04, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.27, cy - r * 0.12, r * 0.04, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#2a5a30"; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.arc(cx, cy + r * 0.35, r * 0.18, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    },
+
+    // ---- exclusive LIMITED-EDITION characters (rotate weekly) ----
+    partycat: function (cx, cy, r) {
+      [["#ff5a5a", -0.7, -0.5], ["#ffd23b", 0.7, -0.4], ["#5b8dff", -0.6, 0.5], ["#7ed957", 0.65, 0.55], ["#ff5aa7", 0.1, -0.9]]
+        .forEach(function (c) { ctx.fillStyle = c[0]; ctx.beginPath(); ctx.arc(cx + c[1] * r, cy + c[2] * r, r * 0.07, 0, 7); ctx.fill(); });
+      ctx.fillStyle = "#ffb26b";
+      ctx.beginPath(); ctx.moveTo(cx - r * 0.7, cy - r * 0.3); ctx.lineTo(cx - r * 0.32, cy - r * 0.82); ctx.lineTo(cx - r * 0.05, cy - r * 0.3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + r * 0.7, cy - r * 0.3); ctx.lineTo(cx + r * 0.32, cy - r * 0.82); ctx.lineTo(cx + r * 0.05, cy - r * 0.3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy + r * 0.1, r * 0.78, 0, 7); ctx.fill();
+      ctx.fillStyle = "#ff5aa7"; ctx.beginPath(); ctx.moveTo(cx, cy - r * 1.2); ctx.lineTo(cx - r * 0.4, cy - r * 0.5); ctx.lineTo(cx + r * 0.4, cy - r * 0.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffd23b"; ctx.beginPath(); ctx.arc(cx, cy - r * 1.2, r * 0.1, 0, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(150,90,40,0.6)"; ctx.lineWidth = r * 0.04;
+      [-1, 1].forEach(function (s) { ctx.beginPath(); ctx.moveTo(cx + s * r * 0.45, cy + r * 0.15); ctx.lineTo(cx + s * r * 0.95, cy + r * 0.06); ctx.stroke(); });
+      kawaiiFace(cx, cy + r * 0.12, r * 0.66);
+    },
+
+    angelcloud: function (cx, cy, r) {
+      ctx.strokeStyle = "#ffe14d"; ctx.lineWidth = r * 0.09;
+      ctx.beginPath(); ctx.ellipse(cx, cy - r * 0.78, r * 0.34, r * 0.12, 0, 0, 7); ctx.stroke();
+      ctx.fillStyle = "#eaf3ff";
+      ctx.beginPath(); ctx.ellipse(cx - r * 0.85, cy, r * 0.3, r * 0.5, -0.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx + r * 0.85, cy, r * 0.3, r * 0.5, 0.5, 0, 7); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      [[0, 0, 0.72], [-0.6, 0.15, 0.48], [0.6, 0.15, 0.48], [-0.3, -0.28, 0.44], [0.3, -0.28, 0.44]]
+        .forEach(function (b) { ctx.beginPath(); ctx.arc(cx + b[0] * r, cy + b[1] * r, b[2] * r, 0, 7); ctx.fill(); });
+      ctx.fillRect(cx - r * 0.82, cy, r * 1.64, r * 0.32);
+      kawaiiFace(cx, cy + r * 0.02, r * 0.62);
+    },
+
+    potion: function (cx, cy, r) {
+      ctx.fillStyle = "#b07a4a"; ctx.fillRect(cx - r * 0.16, cy - r * 0.95, r * 0.32, r * 0.22);
+      ctx.fillStyle = "rgba(220,240,255,0.5)"; ctx.fillRect(cx - r * 0.14, cy - r * 0.78, r * 0.28, r * 0.32);
+      ctx.fillStyle = "rgba(220,240,255,0.45)"; ctx.beginPath(); ctx.arc(cx, cy + r * 0.25, r * 0.62, 0, 7); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy + r * 0.25, r * 0.62, 0, 7); ctx.clip();
+      ctx.fillStyle = "#b06bff"; ctx.fillRect(cx - r * 0.62, cy + r * 0.05, r * 1.24, r * 0.9);
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      [[-0.2, 0.2, 0.08], [0.15, 0.35, 0.06], [0.0, 0.14, 0.05]].forEach(function (b) { ctx.beginPath(); ctx.arc(cx + b[0] * r, cy + b[1] * r, b[2] * r, 0, 7); ctx.fill(); });
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.arc(cx - r * 0.2, cy + r * 0.15, r * 0.35, -0.9, -0.3); ctx.stroke();
+      kawaiiFace(cx, cy + r * 0.38, r * 0.4);
+    },
   };
 
   // =====================================================================
@@ -287,21 +444,35 @@
     { id: "blobby",   type: "art", name: "Blobby",      price: 250 },
     { id: "🍩",       type: "text", emoji: "🍩",        price: 350 },
     { id: "star",     type: "art", name: "Star Buddy",  price: 450 },
+    { id: "bee",      type: "art", name: "Buzzy",       price: 550 },
     { id: "ghost",    type: "art", name: "Ghosty",      price: 600 },
+    { id: "mushroom", type: "art", name: "Shroomie",    price: 700 },
     { id: "🚀",       type: "text", emoji: "🚀",        price: 800 },
+    { id: "avocado",  type: "art", name: "Avo",         price: 900 },
     { id: "heart",    type: "art", name: "Hearty",      price: 1000 },
+    { id: "strawberry", type: "art", name: "Berry",     price: 1200 },
     { id: "cloud",    type: "art", name: "Cloud Puff",  price: 1400 },
+    { id: "cactus",   type: "art", name: "Spike",       price: 1600 },
     { id: "bcat",     type: "art", name: "Bubble Cat",  price: 1900 },
+    { id: "penguin",  type: "art", name: "Pengu",       price: 2200 },
     { id: "🦄",       type: "text", emoji: "🦄",        price: 2500 },
+    { id: "robot",    type: "art", name: "Beep",        price: 2800 },
     { id: "planet",   type: "art", name: "Planet Pal",  price: 3200 },
+    { id: "octopus",  type: "art", name: "Inky",        price: 3800 },
     { id: "dino",     type: "art", name: "Dino Egg",    price: 4200 },
+    { id: "narwhal",  type: "art", name: "Nari",        price: 5000 },
     { id: "🐉",       type: "text", emoji: "🐉",        price: 5500 },
     { id: "rainbow",  type: "art", name: "Rainbow",     price: 7000 },
+    { id: "alien",    type: "art", name: "Zorp",        price: 8000 },
     { id: "gem",      type: "art", name: "Sparkle Gem", price: 9000 },
     { id: "moon",     type: "art", name: "Moon Buddy",  price: 12000 },
     { id: "crownjelly", type: "art", name: "Crown Jelly", price: 18000 },
     // ⭐ Laylah's own design — the rarest, most special prize in the whole game!
     { id: "puppylove", type: "art", name: "Puppy Love ★ by Laylah", price: 30000 },
+    // ✨ Limited editions — only one is available at a time, rotating each week!
+    { id: "partycat",   type: "art", name: "Party Cat",    price: 4500, limited: true },
+    { id: "angelcloud", type: "art", name: "Angel Cloud",  price: 5500, limited: true },
+    { id: "potion",     type: "art", name: "Magic Potion", price: 6500, limited: true },
   ];
   const BYID = {};
   CATALOG.forEach(function (c) { BYID[c.id] = c; });
@@ -420,6 +591,7 @@
     if (screen === "gameover") return tapGameOver(x, y);
     if (screen === "store")    return tapStore(x, y);
     if (screen === "collection") return tapCollection(x, y);
+    if (screen === "help")     return tapHelp(x, y);
   }
   function tapGame(x, y) {
     // If paused, only the pause-menu buttons work
@@ -438,7 +610,7 @@
         if (game.targets.includes(e.id)) {
           game.score += 10; game.earned += 10; save.points += 10; writeSave();
           addFloater(e.x, e.y, "+10", "#2ecc71");
-          playBoing();
+          playCatch(e.id);
         } else { loseHeart(); addFloater(e.x, e.y, "💔", "#ff4d4d"); playWrong(); }
         game.falling.splice(i, 1);
         return;
@@ -449,16 +621,62 @@
 
   function tapStart(x, y) {
     if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
+    if (hit(HELP_MENU, x, y)) { screen = "help"; return; }
     if (hit(BTN_PLAY, x, y)) return startGame();
     if (hit(BTN_STORE, x, y)) return openStore("start");
-    if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; return; }
+    if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; storeScroll = 0; return; }
   }
   function tapCollection(x, y) {
     if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
     if (hit(STORE_PLAY, x, y)) return startGame();
   }
+
+  // ---------- the help / how-to-play screen ----------
+  const HELP_LINES = [
+    { t: "🎯 The top shows what to FIND.", c: "#ffe08a" },
+    { t: "👆 Tap those as they fall — get +10 points!" },
+    { t: "❌ Tap a wrong one and you lose a ❤️." },
+    { t: "💔 Lose all 3 hearts and the game ends." },
+    { t: "📉 Miss a Find at the bottom: -5 points." },
+    { t: "⭐ Hit the score goal to LEVEL UP —" },
+    { t: "      things fall faster and you find more!" },
+    { t: "🛒 Spend points in the Store for cuties." },
+    { t: "✨ Grab Limited Editions before they're gone!" },
+    { t: "🎒 See what you own in My Cuties." },
+    { t: "⏸ Pause and 🔊 Mute are on the play screen." },
+    { t: "💾 Your points save all by themselves!" },
+  ];
+  function drawHelp() {
+    bgFill();
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    let y = STORE_HEADER + 30;
+    for (const ln of HELP_LINES) {
+      ctx.fillStyle = ln.c || "#eef1ff";
+      ctx.font = (ln.c ? "bold 17px" : "16px") + " -apple-system, Arial";
+      ctx.fillText(ln.t, 22, y);
+      y += 36;
+    }
+    // header
+    ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
+    drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
+    drawButton(STORE_PLAY, "▶ Play", "#2ecc71", 18);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+    ctx.fillText("❓ How to Play", W / 2, 30);
+  }
+  function tapHelp(x, y) {
+    if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
+    if (hit(STORE_PLAY, x, y)) return startGame();
+  }
+  function drawScrollHint() {
+    if (storeScroll + 2 < currentMaxScroll()) {
+      ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "bold 13px -apple-system, Arial";
+      ctx.fillText("drag up for more  ⌄", W / 2, H - 12);
+    }
+  }
   function tapGameOver(x, y) { if (hit(BTN_PLAY, x, y)) return startGame(); if (hit(BTN_STORE, x, y)) return openStore("gameover"); }
-  function openStore(from) { storeReturn = from; screen = "store"; pendingBuy = null; storeMsg = ""; scrollY = 0; }
+  function openStore(from) { storeReturn = from; screen = "store"; pendingBuy = null; storeMsg = ""; storeScroll = 0; }
 
   function tapStore(x, y) {
     if (pendingBuy) {
@@ -470,16 +688,17 @@
     }
     if (hit(STORE_BACK, x, y)) { screen = storeReturn; return; }
     if (hit(STORE_PLAY, x, y)) { return startGame(); }
-    for (let i = 0; i < CATALOG.length; i++) {
-      const r = tileRect(i);
-      if (y > STORE_HEADER && hit(r, x, y)) {
-        const item = CATALOG[i];
-        if (owned(item.id)) storeMsg = "You already have " + itemLabel(item.id);
-        else if (save.points >= item.price) { pendingBuy = item; storeMsg = ""; }
-        else storeMsg = "Save up " + item.price + " for " + itemLabel(item.id) + "!";
-        return;
-      }
+    const active = limitedActiveItem();
+    if (active && y > STORE_HEADER && hit(specialRect(), x, y)) { tryBuy(active); return; }
+    for (let i = 0; i < STORE_GRID.length; i++) {
+      const r = storeTile(i);
+      if (y > STORE_HEADER && hit(r, x, y)) { tryBuy(STORE_GRID[i]); return; }
     }
+  }
+  function tryBuy(item) {
+    if (owned(item.id)) storeMsg = "You already have " + itemLabel(item.id);
+    else if (save.points >= item.price) { pendingBuy = item; storeMsg = ""; }
+    else storeMsg = "Save up " + item.price + " for " + itemLabel(item.id) + "!";
   }
 
   // =====================================================================
@@ -492,6 +711,7 @@
     if (screen === "gameover") drawGameOver();
     if (screen === "store")    drawStore();
     if (screen === "collection") drawCollection();
+    if (screen === "help")     drawHelp();
   }
 
   function drawGame() {
@@ -529,9 +749,14 @@
     // draw each target character next to "Find:"
     let tx = 66;
     for (const id of game.targets) { renderItem(id, tx, 24, 30); tx += 36; }
-    // hearts
-    ctx.textAlign = "right"; ctx.font = "20px serif";
-    ctx.fillText("❤️".repeat(game.hearts) || "—", W - 12, 24);
+    // hearts — drawn as SHAPES (not emoji) so they show the same on every device.
+    // Always 3 slots: a filled red heart for each life left, a gray outline for lost ones.
+    for (let i = 0; i < 3; i++) {
+      const hx = W - 70 + i * 26, hy = 22, hr = 9;
+      heartPath(hx, hy, hr);
+      if (i < game.hearts) { ctx.fillStyle = "#ff4d6d"; ctx.fill(); }
+      else { ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 2; ctx.stroke(); }
+    }
     // score + piggy bank
     ctx.font = "bold 15px -apple-system, Arial"; ctx.fillStyle = "#ffd93b"; ctx.textAlign = "left";
     ctx.fillText("Lvl " + game.level + " · ⭐ " + game.score, 12, 58);
@@ -567,6 +792,7 @@
     drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
     drawButton(BTN_COLLECTION, "🎒  My Cuties", "#f4a63b");
     drawButton(MUTE_MENU, save.muted ? "🔇" : "🔊", "#6c5ce7", 18);
+    drawButton(HELP_MENU, "❓", "#6c5ce7", 18);
   }
 
   function drawCollection() {
@@ -592,6 +818,7 @@
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
     ctx.fillText("🎒 My Cuties   " + items.length + " / " + CATALOG.length, W / 2, 30);
+    drawScrollHint();
   }
   function drawGameOver() {
     bgFill();
@@ -608,23 +835,42 @@
     drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
   }
 
+  function drawTile(item, r) {
+    const isOwned = owned(item.id), canAfford = save.points >= item.price;
+    let bg = "rgba(255,255,255,0.12)";
+    if (isOwned) bg = "rgba(46,204,113,0.30)";
+    else if (!canAfford) bg = "rgba(255,255,255,0.05)";
+    roundRect(r.x, r.y, r.w, r.h, 12); ctx.fillStyle = bg; ctx.fill();
+    ctx.globalAlpha = isOwned || canAfford ? 1 : 0.4;
+    renderItem(item.id, r.x + r.w / 2, r.y + r.h / 2 - 8, 38);
+    ctx.globalAlpha = 1;
+    ctx.font = "bold 12px -apple-system, Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (isOwned) { ctx.fillStyle = "#8effa0"; ctx.fillText("✓ owned", r.x + r.w / 2, r.y + r.h - 13); }
+    else { ctx.fillStyle = canAfford ? "#ffe08a" : "#bbb"; ctx.fillText("🪙" + item.price, r.x + r.w / 2, r.y + r.h - 13); }
+  }
+
+  function drawSpecialBanner(item, r) {
+    const isOwned = owned(item.id), canAfford = save.points >= item.price;
+    roundRect(r.x, r.y, r.w, r.h, 16); ctx.fillStyle = "rgba(255,90,167,0.22)"; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#ffd23b"; ctx.stroke();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffd23b"; ctx.font = "bold 15px -apple-system, Arial";
+    ctx.fillText("✨ LIMITED EDITION ✨", r.x + r.w / 2, r.y + 18);
+    renderItem(item.id, r.x + 50, r.y + r.h / 2 + 8, 56);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "white"; ctx.font = "bold 17px -apple-system, Arial";
+    ctx.fillText(item.name, r.x + 96, r.y + 46);
+    if (isOwned) { ctx.fillStyle = "#8effa0"; ctx.font = "bold 15px -apple-system, Arial"; ctx.fillText("✓ You got it!", r.x + 96, r.y + 70); }
+    else { ctx.fillStyle = canAfford ? "#ffe08a" : "#ffb0b0"; ctx.font = "bold 16px -apple-system, Arial"; ctx.fillText("🪙 " + item.price, r.x + 96, r.y + 70); }
+    ctx.fillStyle = "#7ee0ff"; ctx.font = "bold 13px -apple-system, Arial";
+    ctx.fillText("⏳ " + countdownText(limitedTimeLeft()), r.x + 96, r.y + 92);
+  }
+
   function drawStore() {
     bgFill();
-    // tiles
-    for (let i = 0; i < CATALOG.length; i++) {
-      const item = CATALOG[i], r = tileRect(i);
-      const isOwned = owned(item.id), canAfford = save.points >= item.price;
-      let bg = "rgba(255,255,255,0.12)";
-      if (isOwned) bg = "rgba(46,204,113,0.30)";
-      else if (!canAfford) bg = "rgba(255,255,255,0.05)";
-      roundRect(r.x, r.y, r.w, r.h, 12); ctx.fillStyle = bg; ctx.fill();
-      ctx.globalAlpha = isOwned || canAfford ? 1 : 0.4;
-      renderItem(item.id, r.x + r.w / 2, r.y + r.h / 2 - 8, 38);
-      ctx.globalAlpha = 1;
-      ctx.font = "bold 12px -apple-system, Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      if (isOwned) { ctx.fillStyle = "#8effa0"; ctx.fillText("✓ owned", r.x + r.w / 2, r.y + r.h - 13); }
-      else { ctx.fillStyle = canAfford ? "#ffe08a" : "#bbb"; ctx.fillText("🪙" + item.price, r.x + r.w / 2, r.y + r.h - 13); }
-    }
+    for (let i = 0; i < STORE_GRID.length; i++) drawTile(STORE_GRID[i], storeTile(i));
+    const active = limitedActiveItem();
+    if (active) drawSpecialBanner(active, specialRect());
     // header on top of tiles
     ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
     drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
@@ -637,12 +883,18 @@
       ctx.fillStyle = "rgba(27,16,53,0.85)"; ctx.fillRect(0, H - 40, W, 40);
       ctx.fillStyle = "white"; ctx.font = "bold 15px -apple-system, Arial"; ctx.textAlign = "center";
       ctx.fillText(storeMsg, W / 2, H - 20);
+    } else {
+      drawScrollHint();
     }
     if (pendingBuy) {
       ctx.fillStyle = "rgba(0,0,0,0.78)"; ctx.fillRect(0, 0, W, H);
       renderItem(pendingBuy.id, W / 2, H / 2 - 120, 90);
-      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "white";
-      ctx.font = "bold 24px -apple-system, Arial";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (pendingBuy.limited) {
+        ctx.fillStyle = "#ffd23b"; ctx.font = "bold 15px -apple-system, Arial";
+        ctx.fillText("✨ LIMITED EDITION ✨", W / 2, H / 2 - 78);
+      }
+      ctx.fillStyle = "white"; ctx.font = "bold 24px -apple-system, Arial";
       ctx.fillText("Buy " + itemLabel(pendingBuy.id) + "?", W / 2, H / 2 - 50);
       ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
       ctx.fillText("Cost: 🪙 " + pendingBuy.price, W / 2, H / 2 - 15);
@@ -676,6 +928,7 @@
   const PAUSE_BTN = { x: W - 46, y: 86, w: 36, h: 34 };
   const MUTE_BTN  = { x: W - 46, y: 126, w: 36, h: 34 };
   const MUTE_MENU = { x: W - 52, y: 14, w: 40, h: 34 };
+  const HELP_MENU = { x: 12, y: 14, w: 40, h: 34 };
   const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
   const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
   const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
@@ -683,13 +936,57 @@
   const BUY_YES = { x: 40, y: H / 2 + 20, w: 150, h: 64 };
   const BUY_NO  = { x: W - 190, y: H / 2 + 20, w: 150, h: 64 };
   const STORE_HEADER = 58;
-  let scrollY = 0;
+  let storeScroll = 0;
 
-  // 5 columns so all the cuties fit on screen without scrolling
+  // 5 columns; the whole grid slides up/down by storeScroll when there are lots of items
+  const TILE_H = 82, ROW_GAP = 8, GRID_TOP = STORE_HEADER + 8, SPECIAL_H = 132;
+  const WEEK = 7 * 24 * 60 * 60 * 1000;
+  const STORE_GRID = CATALOG.filter(function (c) { return !c.limited; });
+  const LIMITEDS = CATALOG.filter(function (c) { return c.limited; });
+
+  // Which limited-edition character is available right now — it rotates weekly,
+  // using the real calendar so every player sees the same one at the same time.
+  function limitedActiveItem() {
+    if (LIMITEDS.length === 0) return null;
+    return LIMITEDS[Math.floor(Date.now() / WEEK) % LIMITEDS.length];
+  }
+  function limitedTimeLeft() {
+    return (Math.floor(Date.now() / WEEK) + 1) * WEEK - Date.now();
+  }
+  function countdownText(ms) {
+    const d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24, m = Math.floor(ms / 60000) % 60;
+    if (d > 0) return d + "d " + h + "h left";
+    if (h > 0) return h + "h " + m + "m left";
+    return m + "m left";
+  }
+
+  // Collection screen tiles (no limited banner above them)
   function tileRect(i) {
-    const cols = 5, tileW = 74, tileH = 82, gap = 8, startX = 11, startY = STORE_HEADER + 8, rowGap = 8;
+    const cols = 5, tileW = 74, gap = 8, startX = 11;
     const c = i % cols, r = Math.floor(i / cols);
-    return { x: startX + c * (tileW + gap), y: startY + r * (tileH + rowGap), w: tileW, h: tileH };
+    return { x: startX + c * (tileW + gap), y: GRID_TOP + r * (TILE_H + ROW_GAP) - storeScroll, w: tileW, h: TILE_H };
+  }
+  // Store grid tiles (pushed down to make room for the limited banner)
+  function storeTile(i) {
+    const cols = 5, tileW = 74, gap = 8, startX = 11;
+    const top = GRID_TOP + (limitedActiveItem() ? SPECIAL_H : 0);
+    const c = i % cols, r = Math.floor(i / cols);
+    return { x: startX + c * (tileW + gap), y: top + r * (TILE_H + ROW_GAP) - storeScroll, w: tileW, h: TILE_H };
+  }
+  function specialRect() {
+    return { x: 34, y: GRID_TOP - storeScroll, w: W - 68, h: SPECIAL_H - 16 };
+  }
+  function currentMaxScroll() {
+    let top = GRID_TOP, count;
+    if (screen === "store") { top += (limitedActiveItem() ? SPECIAL_H : 0); count = STORE_GRID.length; }
+    else { count = save.unlocked.length; }
+    const rows = Math.ceil(count / 5);
+    return Math.max(0, top + rows * (TILE_H + ROW_GAP) - (H - 44));
+  }
+  function clampScroll() {
+    const m = currentMaxScroll();
+    if (storeScroll < 0) storeScroll = 0;
+    if (storeScroll > m) storeScroll = m;
   }
 
   // =====================================================================
@@ -752,8 +1049,71 @@
   function playBuy()     { beep(784, 784, "triangle", 0.1, 0.3, 0); beep(1047, 1047, "triangle", 0.16, 0.3, 0.1); }
   function toggleMute()  { save.muted = !save.muted; writeSave(); if (!save.muted) playBoing(); }
 
-  canvas.addEventListener("touchstart", function (e) { e.preventDefault(); const t = e.changedTouches[0]; handleTap(t.clientX, t.clientY); });
+  // ---- silly animal + food sounds for when you catch one ----
+  function playMeow() {  // rising-then-falling glide, like a cat
+    if (!ac || save.muted) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
+    o.type = "sawtooth"; lp.type = "lowpass"; lp.frequency.value = 1600;
+    o.frequency.setValueAtTime(520, t);
+    o.frequency.linearRampToValueAtTime(880, t + 0.12);
+    o.frequency.linearRampToValueAtTime(430, t + 0.38);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.28, t + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(lp); lp.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.44);
+  }
+  function playWoof()   { beep(160, 110, "square", 0.09, 0.3, 0); beep(150, 95, "square", 0.12, 0.3, 0.13); }
+  function playRibbit() { beep(240, 90, "sawtooth", 0.09, 0.3, 0); beep(210, 80, "sawtooth", 0.1, 0.3, 0.13); }
+  function playRoar()   { beep(180, 70, "sawtooth", 0.45, 0.35, 0); beep(90, 60, "square", 0.45, 0.2, 0); }
+  function playBuzz()   { beep(150, 130, "square", 0.28, 0.22, 0); }
+  function playMagic()  { beep(800, 800, "triangle", 0.08, 0.25, 0); beep(1100, 1100, "triangle", 0.08, 0.25, 0.08); beep(1500, 1500, "triangle", 0.12, 0.25, 0.16); }
+  function playChirp()  { beep(1200, 1600, "triangle", 0.07, 0.25, 0); beep(1400, 1800, "triangle", 0.07, 0.25, 0.09); }
+  function playYum()    { beep(300, 340, "sine", 0.12, 0.32, 0); beep(360, 300, "sine", 0.2, 0.32, 0.11); }
+
+  // which emoji makes which sound (anything not listed just goes "boing!")
+  const SOUND_MAP = {
+    "🐱": playMeow, "bcat": playMeow, "partycat": playMeow,
+    "🐶": playWoof,
+    "🐸": playRibbit,
+    "🐉": playRoar, "dino": playRoar,
+    "bee": playBuzz,
+    "🦄": playMagic, "star": playMagic, "gem": playMagic, "moon": playMagic, "potion": playMagic, "angelcloud": playMagic,
+    "penguin": playChirp, "octopus": playChirp, "narwhal": playChirp,
+    "🍎": playYum, "🍕": playYum, "🍩": playYum, "avocado": playYum, "strawberry": playYum, "mushroom": playYum,
+  };
+  function playCatch(id) { (SOUND_MAP[id] || playBoing)(); }
+
+  // On the store/collection screens you can DRAG to scroll; a tap that barely
+  // moves counts as a tap. Everywhere else, a touch taps right away.
+  let tStartX = 0, tStartY = 0, tLastY = 0, tMoved = false;
+  function scrollable() { return screen === "store" || screen === "collection"; }
+
+  canvas.addEventListener("touchstart", function (e) {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    tStartX = t.clientX; tStartY = t.clientY; tLastY = t.clientY; tMoved = false;
+    if (!scrollable()) handleTap(t.clientX, t.clientY);
+  });
+  canvas.addEventListener("touchmove", function (e) {
+    e.preventDefault();
+    if (!scrollable()) return;
+    const t = e.changedTouches[0];
+    const rect = canvas.getBoundingClientRect();
+    storeScroll -= (t.clientY - tLastY) * (H / rect.height);
+    tLastY = t.clientY;
+    clampScroll();
+    if (Math.abs(t.clientY - tStartY) > 8) tMoved = true;
+  }, { passive: false });
+  canvas.addEventListener("touchend", function (e) {
+    if (scrollable() && !tMoved) handleTap(tStartX, tStartY);
+  });
+
   canvas.addEventListener("mousedown", function (e) { handleTap(e.clientX, e.clientY); });
+  canvas.addEventListener("wheel", function (e) {
+    if (scrollable()) { e.preventDefault(); storeScroll += e.deltaY; clampScroll(); }
+  }, { passive: false });
 
   loadSave();
   loop();
