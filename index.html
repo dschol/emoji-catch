@@ -820,9 +820,11 @@
     }
   }
   function tapGameOver(x, y) {
-    if (hit(BTN_PLAY, x, y)) return startGame();
-    if (hit(BTN_STORE, x, y)) return openStore("gameover");
-    if (hit(SHARE_BTN, x, y)) { shareGame(); return; }
+    if (hit(GO_PLAY, x, y)) return startGame();
+    if (hit(GO_CUTIES, x, y)) { screen = "collection"; storeScroll = 0; return; }
+    if (hit(GO_AWARDS, x, y)) { screen = "awards"; return; }
+    if (hit(GO_STORE, x, y)) return openStore("gameover");
+    if (hit(GO_SHARE, x, y)) { shareGame(); return; }
   }
   function openStore(from) { storeReturn = from; screen = "store"; pendingBuy = null; storeMsg = ""; storeScroll = 0; }
 
@@ -1021,9 +1023,11 @@
     ctx.fillText("You earned 🪙 " + game.earned + " this game!", W / 2, 215);
     ctx.fillStyle = "#ffe08a";
     ctx.fillText("Piggy bank: 🪙 " + save.points, W / 2, 248);
-    drawButton(BTN_PLAY, "▶  Play Again", "#2ecc71");
-    drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
-    drawButton(SHARE_BTN, "📤  Share with a Friend", "#5b8dff");
+    drawButton(GO_PLAY, "▶  Play Again", "#2ecc71");
+    drawButton(GO_CUTIES, "🎒 Cuties", "#f4a63b", 18);
+    drawButton(GO_AWARDS, "🏆 Awards", "#e0a92e", 18);
+    drawButton(GO_STORE, "🛒 Store", "#ff5aa7", 18);
+    drawButton(GO_SHARE, "📤 Share", "#5b8dff", 18);
     drawUiToast();
   }
 
@@ -1123,7 +1127,12 @@
   const MUTE_MENU = { x: W - 52, y: 14, w: 40, h: 34 };
   const HELP_MENU = { x: 12, y: 14, w: 40, h: 34 };
   const SHARE_MENU = { x: 58, y: 14, w: 40, h: 34 };
-  const SHARE_BTN  = { x: 90, y: 446, w: 240, h: 56 };
+  // Game Over screen: Play Again (wide), then a 2x2 grid of Cuties/Awards/Store/Share
+  const GO_PLAY   = { x: 60, y: 296, w: 300, h: 54 };
+  const GO_CUTIES = { x: 40, y: 362, w: 170, h: 54 };
+  const GO_AWARDS = { x: 210, y: 362, w: 170, h: 54 };
+  const GO_STORE  = { x: 40, y: 424, w: 170, h: 54 };
+  const GO_SHARE  = { x: 210, y: 424, w: 170, h: 54 };
   const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
   const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
   const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
@@ -1392,6 +1401,11 @@
   canvas.addEventListener("wheel", function (e) {
     if (scrollable()) { e.preventDefault(); storeScroll += e.deltaY; clampScroll(); }
   }, { passive: false });
+
+  // Extra safety: flush the save whenever the app is closed or backgrounded,
+  // so a purchase can never be lost between sessions.
+  window.addEventListener("pagehide", writeSave);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) writeSave(); });
 
   loadSave();
   loop();
