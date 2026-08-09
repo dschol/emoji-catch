@@ -422,6 +422,55 @@
       ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.arc(cx - r * 0.2, cy + r * 0.15, r * 0.35, -0.9, -0.3); ctx.stroke();
       kawaiiFace(cx, cy + r * 0.38, r * 0.4);
     },
+
+    // ---- AWARD emojis: earned by playing, never buyable ----
+    trophy: function (cx, cy, r) {
+      ctx.strokeStyle = "#ffd23b"; ctx.lineWidth = r * 0.12;
+      ctx.beginPath(); ctx.arc(cx - r * 0.5, cy - r * 0.3, r * 0.22, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx + r * 0.5, cy - r * 0.3, r * 0.22, Math.PI * 0.5, -Math.PI * 0.5, true); ctx.stroke();
+      ctx.fillStyle = "#ffd23b"; ctx.beginPath();
+      ctx.moveTo(cx - r * 0.5, cy - r * 0.6); ctx.lineTo(cx + r * 0.5, cy - r * 0.6);
+      ctx.lineTo(cx + r * 0.4, cy - r * 0.05); ctx.quadraticCurveTo(cx, cy + r * 0.35, cx - r * 0.4, cy - r * 0.05);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#e0a92e"; ctx.fillRect(cx - r * 0.08, cy + r * 0.28, r * 0.16, r * 0.28);
+      ctx.fillRect(cx - r * 0.35, cy + r * 0.55, r * 0.7, r * 0.16);
+      kawaiiFace(cx, cy - r * 0.25, r * 0.4);
+    },
+    medal: function (cx, cy, r) {
+      ctx.fillStyle = "#5b8dff"; ctx.beginPath(); ctx.moveTo(cx - r * 0.35, cy - r * 0.9); ctx.lineTo(cx - r * 0.05, cy - r * 0.1); ctx.lineTo(cx - r * 0.5, cy - r * 0.1); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ff5a5a"; ctx.beginPath(); ctx.moveTo(cx + r * 0.35, cy - r * 0.9); ctx.lineTo(cx + r * 0.05, cy - r * 0.1); ctx.lineTo(cx + r * 0.5, cy - r * 0.1); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffd23b"; ctx.beginPath(); ctx.arc(cx, cy + r * 0.32, r * 0.55, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#e0a92e"; ctx.lineWidth = r * 0.06; ctx.stroke();
+      starShape(cx, cy + r * 0.32, r * 0.3, "#fff3b0");
+      kawaiiFace(cx, cy + r * 0.34, r * 0.32);
+    },
+    flame: function (cx, cy, r) {
+      ctx.fillStyle = "#ff7a1a"; ctx.beginPath();
+      ctx.moveTo(cx, cy - r); ctx.bezierCurveTo(cx + r * 0.7, cy - r * 0.2, cx + r * 0.5, cy + r * 0.85, cx, cy + r * 0.85);
+      ctx.bezierCurveTo(cx - r * 0.5, cy + r * 0.85, cx - r * 0.7, cy - r * 0.2, cx, cy - r); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffd23b"; ctx.beginPath();
+      ctx.moveTo(cx, cy - r * 0.4); ctx.bezierCurveTo(cx + r * 0.4, cy + r * 0.1, cx + r * 0.28, cy + r * 0.72, cx, cy + r * 0.75);
+      ctx.bezierCurveTo(cx - r * 0.28, cy + r * 0.72, cx - r * 0.4, cy + r * 0.1, cx, cy - r * 0.4); ctx.closePath(); ctx.fill();
+      kawaiiFace(cx, cy + r * 0.38, r * 0.38);
+    },
+    crownach: function (cx, cy, r) {
+      ctx.fillStyle = "#ffd23b"; ctx.beginPath();
+      ctx.moveTo(cx - r * 0.75, cy + r * 0.5); ctx.lineTo(cx - r * 0.85, cy - r * 0.5); ctx.lineTo(cx - r * 0.35, cy - r * 0.05);
+      ctx.lineTo(cx, cy - r * 0.6); ctx.lineTo(cx + r * 0.35, cy - r * 0.05); ctx.lineTo(cx + r * 0.85, cy - r * 0.5);
+      ctx.lineTo(cx + r * 0.75, cy + r * 0.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ff5a7a"; ctx.beginPath(); ctx.arc(cx, cy - r * 0.32, r * 0.1, 0, 7); ctx.fill();
+      ctx.fillStyle = "#5be3ff"; ctx.beginPath(); ctx.arc(cx - r * 0.5, cy - r * 0.28, r * 0.08, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + r * 0.5, cy - r * 0.28, r * 0.08, 0, 7); ctx.fill();
+      kawaiiFace(cx, cy + r * 0.18, r * 0.4);
+    },
+    rainbowstar: function (cx, cy, r) {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 === 0 ? r : r * 0.45; const px = cx + Math.cos(a) * rad, py = cy + Math.sin(a) * rad; i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+      ctx.closePath(); ctx.save(); ctx.clip();
+      const cols = ["#ff5a5a", "#ffb347", "#ffe14d", "#7ed957", "#5b8dff", "#b06bff"], bh = (2 * r) / cols.length;
+      cols.forEach(function (c, i) { ctx.fillStyle = c; ctx.fillRect(cx - r, cy - r + i * bh, 2 * r, bh + 1); });
+      ctx.restore();
+      kawaiiFace(cx, cy, r * 0.5);
+    },
   };
 
   // =====================================================================
@@ -473,6 +522,12 @@
     { id: "partycat",   type: "art", name: "Party Cat",    price: 4500, limited: true },
     { id: "angelcloud", type: "art", name: "Angel Cloud",  price: 5500, limited: true },
     { id: "potion",     type: "art", name: "Magic Potion", price: 6500, limited: true },
+    // 🏆 AWARDS — earned by playing, never for sale (no price)
+    { id: "trophy",     type: "art", name: "Level 5 Trophy", achievement: true },
+    { id: "medal",      type: "art", name: "Catch Medal",    achievement: true },
+    { id: "flame",      type: "art", name: "Hot Streak",      achievement: true },
+    { id: "crownach",   type: "art", name: "Level 10 Crown",  achievement: true },
+    { id: "rainbowstar", type: "art", name: "1000 Club",      achievement: true },
   ];
   const BYID = {};
   CATALOG.forEach(function (c) { BYID[c.id] = c; });
@@ -511,6 +566,29 @@
     save.unlocked = Array.from(set);
     if (typeof save.points !== "number") save.points = 0;
     if (typeof save.muted !== "boolean") save.muted = false;
+    if (typeof save.totalCatches !== "number") save.totalCatches = 0;  // emojis caught, all time
+    if (typeof save.bestStreak !== "number") save.bestStreak = 0;      // longest correct streak
+    if (typeof save.maxLevel !== "number") save.maxLevel = 1;          // highest level reached
+  }
+
+  // 🏆 Awards you EARN by playing — never buyable. When "done" becomes true,
+  // the award emoji is added to your collection and starts appearing in the game.
+  const ACHIEVEMENTS = [
+    { id: "trophy",      how: "Reach Level 5",       done: function () { return save.maxLevel >= 5; } },
+    { id: "medal",       how: "Catch 300 emojis",    done: function () { return save.totalCatches >= 300; }, progress: function () { return save.totalCatches + " / 300"; } },
+    { id: "flame",       how: "Catch 15 in a row",   done: function () { return save.bestStreak >= 15; }, progress: function () { return "best streak: " + save.bestStreak; } },
+    { id: "crownach",    how: "Reach Level 10",      done: function () { return save.maxLevel >= 10; } },
+    { id: "rainbowstar", how: "Catch 1000 emojis",   done: function () { return save.totalCatches >= 1000; }, progress: function () { return save.totalCatches + " / 1000"; } },
+  ];
+  let achToast = null;  // { id, life } — the "New Award!" banner
+  function checkAchievements() {
+    for (const a of ACHIEVEMENTS) {
+      if (!owned(a.id) && a.done()) {
+        save.unlocked.push(a.id); writeSave();
+        achToast = { id: a.id, life: 200 };   // ~3.3 seconds
+        playFanfare();
+      }
+    }
   }
   function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
   function owned(id) { return save.unlocked.includes(id); }
@@ -525,7 +603,7 @@
 
   let game;
   function startGame() {
-    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false };
+    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false, streak: 0 };
     pickTargets(); screen = "playing";
   }
   function pickTargets() {
@@ -563,8 +641,10 @@
     const nextGoal = LEVEL_GOALS[game.level];
     if (nextGoal !== undefined && game.score >= nextGoal) {
       game.level++; pickTargets();
+      if (game.level > save.maxLevel) { save.maxLevel = game.level; writeSave(); }
       game.pause = 108; game.falling = []; game.floaters = []; game.spawnTimer = 0;
       playLevelUp();
+      checkAchievements();
     }
   }
   function spawnEmoji() {
@@ -592,6 +672,7 @@
     if (screen === "store")    return tapStore(x, y);
     if (screen === "collection") return tapCollection(x, y);
     if (screen === "help")     return tapHelp(x, y);
+    if (screen === "awards")   return tapAwards(x, y);
   }
   function tapGame(x, y) {
     // If paused, only the pause-menu buttons work
@@ -608,10 +689,14 @@
       const dx = x - e.x, dy = y - e.y;
       if (dx * dx + dy * dy < e.size * e.size) {
         if (game.targets.includes(e.id)) {
-          game.score += 10; game.earned += 10; save.points += 10; writeSave();
+          game.score += 10; game.earned += 10; save.points += 10;
+          game.streak++; save.totalCatches++;
+          if (game.streak > save.bestStreak) save.bestStreak = game.streak;
+          writeSave();
           addFloater(e.x, e.y, "+10", "#2ecc71");
           playCatch(e.id);
-        } else { loseHeart(); addFloater(e.x, e.y, "💔", "#ff4d4d"); playWrong(); }
+          checkAchievements();
+        } else { game.streak = 0; loseHeart(); addFloater(e.x, e.y, "💔", "#ff4d4d"); playWrong(); }
         game.falling.splice(i, 1);
         return;
       }
@@ -622,9 +707,11 @@
   function tapStart(x, y) {
     if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
     if (hit(HELP_MENU, x, y)) { screen = "help"; return; }
+    if (hit(SHARE_MENU, x, y)) { shareGame(); return; }
     if (hit(BTN_PLAY, x, y)) return startGame();
     if (hit(BTN_STORE, x, y)) return openStore("start");
     if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; storeScroll = 0; return; }
+    if (hit(BTN_AWARDS, x, y)) { screen = "awards"; return; }
   }
   function tapCollection(x, y) {
     if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
@@ -668,6 +755,63 @@
     if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
     if (hit(STORE_PLAY, x, y)) return startGame();
   }
+
+  // ---------- the awards / achievements screen ----------
+  function drawAwards() {
+    bgFill();
+    ctx.textBaseline = "middle";
+    let y = STORE_HEADER + 46;
+    for (const a of ACHIEVEMENTS) {
+      const got = owned(a.id);
+      roundRect(20, y - 33, W - 40, 66, 12);
+      ctx.fillStyle = got ? "rgba(46,204,113,0.25)" : "rgba(255,255,255,0.07)"; ctx.fill();
+      ctx.globalAlpha = got ? 1 : 0.35;    // locked awards show greyed out (a preview of the prize)
+      renderItem(a.id, 58, y, 46);
+      ctx.globalAlpha = 1;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = got ? "#8effa0" : "white"; ctx.font = "bold 16px -apple-system, Arial";
+      ctx.fillText(itemLabel(a.id), 100, y - 9);
+      ctx.fillStyle = "#cdd6ff"; ctx.font = "13px -apple-system, Arial";
+      let sub = got ? "✓ Unlocked!" : (a.progress ? a.how + "  (" + a.progress() + ")" : a.how);
+      ctx.fillText(sub, 100, y + 13);
+      y += 80;
+    }
+    ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
+    drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
+    drawButton(STORE_PLAY, "▶ Play", "#2ecc71", 18);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+    const gotCount = ACHIEVEMENTS.filter(function (a) { return owned(a.id); }).length;
+    ctx.fillText("🏆 Awards   " + gotCount + " / " + ACHIEVEMENTS.length, W / 2, 30);
+  }
+  function tapAwards(x, y) {
+    if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
+    if (hit(STORE_PLAY, x, y)) return startGame();
+  }
+
+  // ---------- sharing ----------
+  let uiToast = null;
+  function showToast(text) { uiToast = { text: text, life: 130 }; }
+  function drawUiToast() {
+    if (!uiToast) return;
+    uiToast.life--;
+    if (uiToast.life <= 0) { uiToast = null; return; }
+    ctx.globalAlpha = Math.min(1, uiToast.life / 30);
+    roundRect(W / 2 - 130, H - 74, 260, 42, 12); ctx.fillStyle = "rgba(20,10,40,0.92)"; ctx.fill();
+    ctx.fillStyle = "white"; ctx.font = "bold 15px -apple-system, Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(uiToast.text, W / 2, H - 53);
+    ctx.globalAlpha = 1;
+  }
+  function shareGame() {
+    const url = "https://dschol.github.io/emoji-catch/";
+    const data = { title: "Emoji Catch", text: "Play Emoji Catch — a fun emoji-tapping game! 🎯🐱🍕", url: url };
+    // Phones: open the native share sheet (Messages, AirDrop, etc.)
+    if (navigator.share) { navigator.share(data).catch(function () {}); }
+    // Computers: copy the link to the clipboard instead
+    else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { showToast("Link copied! 📋"); }, function () { showToast(url); });
+    } else { showToast(url); }
+  }
   function drawScrollHint() {
     if (storeScroll + 2 < currentMaxScroll()) {
       ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -675,7 +819,11 @@
       ctx.fillText("drag up for more  ⌄", W / 2, H - 12);
     }
   }
-  function tapGameOver(x, y) { if (hit(BTN_PLAY, x, y)) return startGame(); if (hit(BTN_STORE, x, y)) return openStore("gameover"); }
+  function tapGameOver(x, y) {
+    if (hit(BTN_PLAY, x, y)) return startGame();
+    if (hit(BTN_STORE, x, y)) return openStore("gameover");
+    if (hit(SHARE_BTN, x, y)) { shareGame(); return; }
+  }
   function openStore(from) { storeReturn = from; screen = "store"; pendingBuy = null; storeMsg = ""; storeScroll = 0; }
 
   function tapStore(x, y) {
@@ -712,6 +860,7 @@
     if (screen === "store")    drawStore();
     if (screen === "collection") drawCollection();
     if (screen === "help")     drawHelp();
+    if (screen === "awards")   drawAwards();
   }
 
   function drawGame() {
@@ -730,7 +879,26 @@
       drawButton(PAUSE_BTN, "⏸", "#6c5ce7", 18);
       drawButton(MUTE_BTN, save.muted ? "🔇" : "🔊", "#6c5ce7", 16);
     }
+    if (achToast) drawAchToast();
     if (game.paused) drawPauseMenu();
+  }
+
+  function drawAchToast() {
+    achToast.life--;
+    if (achToast.life <= 0) { achToast = null; return; }
+    const a = achToast, bx = 30, bw = W - 60, by = 100, bh = 92;
+    ctx.globalAlpha = Math.min(1, achToast.life / 30);   // gentle fade at the end
+    roundRect(bx, by, bw, bh, 16); ctx.fillStyle = "rgba(20,10,40,0.94)"; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#ffd23b"; ctx.stroke();
+    renderItem(a.id, bx + 50, by + bh / 2, 60);
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffd23b"; ctx.font = "bold 19px -apple-system, Arial";
+    ctx.fillText("🏆 New Award!", bx + 96, by + 26);
+    ctx.fillStyle = "white"; ctx.font = "bold 17px -apple-system, Arial";
+    ctx.fillText(itemLabel(a.id), bx + 96, by + 50);
+    ctx.fillStyle = "#9fe8ff"; ctx.font = "13px -apple-system, Arial";
+    ctx.fillText("Earned, not bought!", bx + 96, by + 72);
+    ctx.globalAlpha = 1;
   }
 
   function drawPauseMenu() {
@@ -810,8 +978,11 @@
     drawButton(BTN_PLAY, "▶  Play", "#2ecc71");
     drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
     drawButton(BTN_COLLECTION, "🎒  My Cuties", "#f4a63b");
+    drawButton(BTN_AWARDS, "🏆  Awards", "#e0a92e");
     drawButton(MUTE_MENU, save.muted ? "🔇" : "🔊", "#6c5ce7", 18);
     drawButton(HELP_MENU, "❓", "#6c5ce7", 18);
+    drawButton(SHARE_MENU, "📤", "#6c5ce7", 18);
+    drawUiToast();
   }
 
   function drawCollection() {
@@ -852,6 +1023,8 @@
     ctx.fillText("Piggy bank: 🪙 " + save.points, W / 2, 248);
     drawButton(BTN_PLAY, "▶  Play Again", "#2ecc71");
     drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
+    drawButton(SHARE_BTN, "📤  Share with a Friend", "#5b8dff");
+    drawUiToast();
   }
 
   function drawTile(item, r) {
@@ -941,13 +1114,16 @@
   }
   function hit(rect, x, y) { return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h; }
 
-  const BTN_PLAY  = { x: 90, y: 330, w: 240, h: 62 };
-  const BTN_STORE = { x: 90, y: 404, w: 240, h: 62 };
-  const BTN_COLLECTION = { x: 90, y: 478, w: 240, h: 62 };
+  const BTN_PLAY  = { x: 90, y: 314, w: 240, h: 56 };
+  const BTN_STORE = { x: 90, y: 380, w: 240, h: 56 };
+  const BTN_COLLECTION = { x: 90, y: 446, w: 240, h: 56 };
+  const BTN_AWARDS = { x: 90, y: 512, w: 240, h: 56 };
   const PAUSE_BTN = { x: W - 46, y: 86, w: 36, h: 34 };
   const MUTE_BTN  = { x: W - 46, y: 126, w: 36, h: 34 };
   const MUTE_MENU = { x: W - 52, y: 14, w: 40, h: 34 };
   const HELP_MENU = { x: 12, y: 14, w: 40, h: 34 };
+  const SHARE_MENU = { x: 58, y: 14, w: 40, h: 34 };
+  const SHARE_BTN  = { x: 90, y: 446, w: 240, h: 56 };
   const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
   const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
   const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
@@ -960,7 +1136,7 @@
   // 5 columns; the whole grid slides up/down by storeScroll when there are lots of items
   const TILE_H = 82, ROW_GAP = 8, GRID_TOP = STORE_HEADER + 8, SPECIAL_H = 132;
   const WEEK = 7 * 24 * 60 * 60 * 1000;
-  const STORE_GRID = CATALOG.filter(function (c) { return !c.limited; });
+  const STORE_GRID = CATALOG.filter(function (c) { return !c.limited && !c.achievement; });
   const LIMITEDS = CATALOG.filter(function (c) { return c.limited; });
 
   // Which limited-edition character is available right now — it rotates weekly,
@@ -1066,6 +1242,7 @@
   function playWrong()   { beep(180, 90, "square", 0.22, 0.25); }
   function playLevelUp() { beep(523, 523, "triangle", 0.12, 0.3, 0); beep(659, 659, "triangle", 0.12, 0.3, 0.12); beep(784, 784, "triangle", 0.18, 0.3, 0.24); }
   function playBuy()     { beep(784, 784, "triangle", 0.1, 0.3, 0); beep(1047, 1047, "triangle", 0.16, 0.3, 0.1); }
+  function playFanfare() { beep(523, 523, "triangle", 0.14, 0.3, 0); beep(659, 659, "triangle", 0.14, 0.3, 0.14); beep(784, 784, "triangle", 0.14, 0.3, 0.28); beep(1047, 1047, "triangle", 0.32, 0.32, 0.42); }
   function toggleMute()  { save.muted = !save.muted; writeSave(); if (!save.muted) playBoing(); }
 
   // ---- animal + food sounds: the browser actually SAYS the sound out loud ----
