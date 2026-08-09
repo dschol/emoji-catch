@@ -673,6 +673,7 @@
     if (typeof save.scene !== "string") save.scene = "default";        // unlocked background scene
     if (typeof save.playerId !== "string" || !save.playerId) save.playerId = makeId();  // anonymous id (for future referrals)
     if (typeof save.name !== "string" || !save.name) save.name = generateNickname();     // silly leaderboard nickname
+    if (typeof save.bestScore !== "number") save.bestScore = 0;         // best score we've submitted
   }
 
   // ---- silly nickname generator (no real names, nothing to type) ----
@@ -686,7 +687,15 @@
     const n = NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
     return (a + n + (10 + Math.floor(Math.random() * 90))).slice(0, 14);
   }
-  function rerollName() { save.name = generateNickname(); writeSave(); playBoing(); }
+  let nameSyncTimer = null;
+  function rerollName() {
+    save.name = generateNickname(); writeSave(); playBoing();
+    // if we're already on the leaderboard, push the new name up (debounced)
+    if (save.bestScore > 0) {
+      if (nameSyncTimer) clearTimeout(nameSyncTimer);
+      nameSyncTimer = setTimeout(syncName, 900);
+    }
+  }
 
   // 🏆 Awards you EARN by playing — never buyable. When "done" becomes true,
   // the award emoji is added to your collection and starts appearing in the game.
@@ -1003,9 +1012,21 @@
   let lbBoard = [], lbStatus = "idle", lbRank = null, lbReturn = "start";
   function submitScore() {
     if (!LEADERBOARD_URL || game.score <= 0) return;   // don't submit empty runs
+    if (game.score > save.bestScore) { save.bestScore = game.score; writeSave(); }
     fetch(LEADERBOARD_URL, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: save.name, score: game.score, id: save.playerId }),
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res && res.ok) { lbRank = res.rank; if (res.top) lbBoard = res.top; }
+    }).catch(function () {});
+  }
+  // Re-send our BEST score under the new name — this updates the name on the
+  // board without changing our score (works with the existing Worker).
+  function syncName() {
+    if (!LEADERBOARD_URL || !(save.bestScore > 0)) return;
+    fetch(LEADERBOARD_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: save.name, score: save.bestScore, id: save.playerId }),
     }).then(function (r) { return r.json(); }).then(function (res) {
       if (res && res.ok) { lbRank = res.rank; if (res.top) lbBoard = res.top; }
     }).catch(function () {});
