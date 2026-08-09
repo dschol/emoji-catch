@@ -671,7 +671,22 @@
     if (typeof save.bestStreak !== "number") save.bestStreak = 0;      // longest correct streak
     if (typeof save.maxLevel !== "number") save.maxLevel = 1;          // highest level reached
     if (typeof save.scene !== "string") save.scene = "default";        // unlocked background scene
+    if (typeof save.playerId !== "string" || !save.playerId) save.playerId = makeId();  // anonymous id (for future referrals)
+    if (typeof save.name !== "string" || !save.name) save.name = generateNickname();     // silly leaderboard nickname
   }
+
+  // ---- silly nickname generator (no real names, nothing to type) ----
+  const NICK_ADJ = ["Brave", "Silly", "Speedy", "Fluffy", "Mighty", "Cosmic", "Zippy", "Jolly", "Bouncy", "Sneaky", "Turbo", "Cuddly", "Ninja", "Giggly", "Dizzy", "Mega", "Groovy", "Sparkly", "Wobbly", "Sunny"];
+  const NICK_NOUN = ["Tiger", "Panda", "Taco", "Waffle", "Dragon", "Kitten", "Noodle", "Rocket", "Muffin", "Penguin", "Pickle", "Yeti", "Otter", "Donut", "Robot", "Bunny", "Cookie", "Dino", "Fox", "Duck"];
+  function makeId() {
+    try { return crypto.randomUUID(); } catch (e) { return "p" + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  }
+  function generateNickname() {
+    const a = NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)];
+    const n = NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
+    return (a + n + (10 + Math.floor(Math.random() * 90))).slice(0, 14);
+  }
+  function rerollName() { save.name = generateNickname(); writeSave(); playBoing(); }
 
   // 🏆 Awards you EARN by playing — never buyable. When "done" becomes true,
   // the award emoji is added to your collection and starts appearing in the game.
@@ -801,6 +816,7 @@
     if (screen === "collection") return tapCollection(x, y);
     if (screen === "help")     return tapHelp(x, y);
     if (screen === "awards")   return tapAwards(x, y);
+    if (screen === "leaderboard") return tapLeaderboard(x, y);
   }
   function tapGame(x, y) {
     // If paused, only the pause-menu buttons work
@@ -842,7 +858,7 @@
       }
     }
   }
-  function loseHeart() { game.hearts--; game.flash = 1; if (game.hearts <= 0) { game.hearts = 0; screen = "gameover"; } }
+  function loseHeart() { game.hearts--; game.flash = 1; if (game.hearts <= 0) { game.hearts = 0; screen = "gameover"; submitScore(); } }
 
   // ---- SECRET tap pattern: tap the 4 cuties under the title left->right->left ----
   const DECO_Y = 235, DECO_X = [W / 2 - 105, W / 2 - 35, W / 2 + 35, W / 2 + 105];
@@ -874,6 +890,8 @@
     if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
     if (hit(HELP_MENU, x, y)) { screen = "help"; return; }
     if (hit(SHARE_MENU, x, y)) { shareGame(); return; }
+    if (hit(LEADER_MENU, x, y)) { openLeaderboard("start"); return; }
+    if (hit(REROLL_BTN, x, y)) { rerollName(); return; }
     if (hit(BTN_PLAY, x, y)) return startGame();
     if (hit(BTN_STORE, x, y)) return openStore("start");
     if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; storeScroll = 0; return; }
@@ -979,6 +997,69 @@
       navigator.clipboard.writeText(url).then(function () { showToast("Link copied! 📋"); }, function () { showToast(url); });
     } else { showToast(url); }
   }
+
+  // ---------- leaderboard (Cloudflare Worker) ----------
+  const LEADERBOARD_URL = "https://emoji-catch-leaderboard.dan-scholnick.workers.dev/";
+  let lbBoard = [], lbStatus = "idle", lbRank = null, lbReturn = "start";
+  function submitScore() {
+    if (!LEADERBOARD_URL || game.score <= 0) return;   // don't submit empty runs
+    fetch(LEADERBOARD_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: save.name, score: game.score, id: save.playerId }),
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res && res.ok) { lbRank = res.rank; if (res.top) lbBoard = res.top; }
+    }).catch(function () {});
+  }
+  function fetchBoard() {
+    lbStatus = "loading";
+    fetch(LEADERBOARD_URL).then(function (r) { return r.json(); }).then(function (list) {
+      lbBoard = Array.isArray(list) ? list : []; lbStatus = "ok";
+    }).catch(function () { lbStatus = "error"; });
+  }
+  function openLeaderboard(from) { lbReturn = from; screen = "leaderboard"; fetchBoard(); }
+  function tapLeaderboard(x, y) {
+    if (hit(STORE_BACK, x, y)) { screen = lbReturn; return; }
+    if (hit(STORE_PLAY, x, y)) return startGame();
+  }
+  function drawLeaderboard() {
+    bgFill();
+    ctx.textBaseline = "middle";
+    if (lbStatus === "loading") {
+      ctx.fillStyle = "#cdd6ff"; ctx.font = "bold 18px -apple-system, Arial"; ctx.textAlign = "center";
+      ctx.fillText("Loading…", W / 2, H / 2);
+    } else if (lbStatus === "error") {
+      ctx.fillStyle = "#ffb0b0"; ctx.font = "bold 16px -apple-system, Arial"; ctx.textAlign = "center";
+      ctx.fillText("Couldn't load the leaderboard.", W / 2, H / 2 - 12);
+      ctx.fillStyle = "#cdd6ff"; ctx.font = "14px -apple-system, Arial";
+      ctx.fillText("Check the internet and try again.", W / 2, H / 2 + 14);
+    } else if (lbBoard.length === 0) {
+      ctx.fillStyle = "#cdd6ff"; ctx.font = "bold 16px -apple-system, Arial"; ctx.textAlign = "center";
+      ctx.fillText("No scores yet — be the first! 🎯", W / 2, H / 2);
+    } else {
+      let y = STORE_HEADER + 26;
+      for (let i = 0; i < lbBoard.length && y < H - 48; i++) {
+        const e = lbBoard[i], me = (e.name === save.name);
+        roundRect(16, y - 14, W - 32, 28, 8); ctx.fillStyle = me ? "rgba(46,204,113,0.32)" : "rgba(255,255,255,0.07)"; ctx.fill();
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillStyle = i === 0 ? "#ffd93b" : (me ? "#8effa0" : "#cdd6ff"); ctx.font = "bold 14px -apple-system, Arial";
+        const tag = i === 0 ? "🥇 " : i === 1 ? "🥈 " : i === 2 ? "🥉 " : "#" + (i + 1) + "  ";
+        ctx.fillText(tag + e.name, 28, y);
+        ctx.textAlign = "right"; ctx.fillStyle = "#ffe08a";
+        ctx.fillText("⭐ " + e.score, W - 28, y);
+        y += 30;
+      }
+    }
+    // footer: your name + rank
+    ctx.fillStyle = "rgba(27,16,53,0.92)"; ctx.fillRect(0, H - 36, W, 36);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 13px -apple-system, Arial"; ctx.fillStyle = "#9fe8ff";
+    ctx.fillText("You: 🏷️ " + save.name + (lbRank ? "   ·   Rank #" + lbRank : ""), W / 2, H - 18);
+    // header on top
+    ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
+    drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
+    drawButton(STORE_PLAY, "▶ Play", "#2ecc71", 18);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+    ctx.fillText("🏅 Leaderboard", W / 2, 30);
+  }
   function drawScrollHint() {
     if (storeScroll + 2 < currentMaxScroll()) {
       ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -992,6 +1073,7 @@
     if (hit(GO_AWARDS, x, y)) { screen = "awards"; return; }
     if (hit(GO_STORE, x, y)) return openStore("gameover");
     if (hit(GO_SHARE, x, y)) { shareGame(); return; }
+    if (hit(GO_LEADER, x, y)) { openLeaderboard("gameover"); return; }
   }
   function openStore(from) { storeReturn = from; screen = "store"; pendingBuy = null; storeMsg = ""; storeScroll = 0; }
 
@@ -1030,6 +1112,7 @@
     if (screen === "collection") drawCollection();
     if (screen === "help")     drawHelp();
     if (screen === "awards")   drawAwards();
+    if (screen === "leaderboard") drawLeaderboard();
   }
 
   function drawGame() {
@@ -1144,6 +1227,11 @@
       ctx.globalAlpha = 0.45; drawCloud(60, 95, 22); drawCloud(356, 118, 26); ctx.globalAlpha = 1;
     }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    // nickname pill (used for the leaderboard) — tap to roll a new silly name
+    roundRect(REROLL_BTN.x, REROLL_BTN.y, REROLL_BTN.w, REROLL_BTN.h, 16);
+    ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fill();
+    ctx.fillStyle = "#cdd6ff"; ctx.font = "bold 14px -apple-system, Arial";
+    ctx.fillText("🏷️ " + save.name + "   🔀", W / 2, REROLL_BTN.y + REROLL_BTN.h / 2 + 1);
     ctx.fillStyle = "white"; ctx.font = "bold 46px -apple-system, Arial";
     ctx.fillText("🎯 Emoji", W / 2, 120); ctx.fillText("Catch", W / 2, 175);
     // show a few cuties as decoration
@@ -1158,6 +1246,7 @@
     drawButton(MUTE_MENU, save.muted ? "🔇" : "🔊", "#6c5ce7", 18);
     drawButton(HELP_MENU, "❓", "#6c5ce7", 18);
     drawButton(SHARE_MENU, "📤", "#6c5ce7", 18);
+    drawButton(LEADER_MENU, "🏅", "#6c5ce7", 18);
     drawUiToast();
   }
 
@@ -1202,6 +1291,7 @@
     drawButton(GO_AWARDS, "🏆 Awards", "#e0a92e", 18);
     drawButton(GO_STORE, "🛒 Store", "#ff5aa7", 18);
     drawButton(GO_SHARE, "📤 Share", "#5b8dff", 18);
+    drawButton(GO_LEADER, "🏅 Leaderboard", "#f4a63b", 20);
     drawUiToast();
   }
 
@@ -1345,12 +1435,15 @@
   const MUTE_MENU = { x: W - 52, y: 14, w: 40, h: 34 };
   const HELP_MENU = { x: 12, y: 14, w: 40, h: 34 };
   const SHARE_MENU = { x: 58, y: 14, w: 40, h: 34 };
+  const REROLL_BTN = { x: W / 2 - 115, y: 54, w: 230, h: 32 };
   // Game Over screen: Play Again (wide), then a 2x2 grid of Cuties/Awards/Store/Share
   const GO_PLAY   = { x: 60, y: 296, w: 300, h: 54 };
   const GO_CUTIES = { x: 40, y: 362, w: 170, h: 54 };
   const GO_AWARDS = { x: 210, y: 362, w: 170, h: 54 };
   const GO_STORE  = { x: 40, y: 424, w: 170, h: 54 };
   const GO_SHARE  = { x: 210, y: 424, w: 170, h: 54 };
+  const GO_LEADER = { x: 60, y: 486, w: 300, h: 54 };
+  const LEADER_MENU = { x: 104, y: 14, w: 40, h: 34 };
   const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
   const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
   const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
