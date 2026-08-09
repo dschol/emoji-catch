@@ -382,6 +382,105 @@
       ctx.strokeStyle = "#2a5a30"; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.arc(cx, cy + r * 0.35, r * 0.18, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
     },
 
+    // charcoal-gray cat snuggled in a fluffy cloud bed (from Dan's picture)
+    graycat: function (cx, cy, r) {
+      const GRAY = "#5c6066", INNER = "#7a5a5a", AMBER = "#f2b01e";
+      // fluffy white bed
+      ctx.fillStyle = "#f4f7fa";
+      [[-0.72, 0.55, 0.5], [0.72, 0.55, 0.5], [-0.28, 0.8, 0.5], [0.34, 0.82, 0.48], [0, 0.62, 0.56], [-0.98, 0.32, 0.32], [0.98, 0.36, 0.32]]
+        .forEach(function (b) { ctx.beginPath(); ctx.arc(cx + b[0] * r, cy + b[1] * r, b[2] * r, 0, 7); ctx.fill(); });
+      // ears (outer then darker inner)
+      ctx.fillStyle = GRAY;
+      ctx.beginPath(); ctx.moveTo(cx - 0.66 * r, cy - 0.3 * r); ctx.lineTo(cx - 0.72 * r, cy - 0.95 * r); ctx.lineTo(cx - 0.18 * r, cy - 0.5 * r); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + 0.66 * r, cy - 0.3 * r); ctx.lineTo(cx + 0.72 * r, cy - 0.95 * r); ctx.lineTo(cx + 0.18 * r, cy - 0.5 * r); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = INNER;
+      ctx.beginPath(); ctx.moveTo(cx - 0.56 * r, cy - 0.4 * r); ctx.lineTo(cx - 0.62 * r, cy - 0.82 * r); ctx.lineTo(cx - 0.3 * r, cy - 0.52 * r); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + 0.56 * r, cy - 0.4 * r); ctx.lineTo(cx + 0.62 * r, cy - 0.82 * r); ctx.lineTo(cx + 0.3 * r, cy - 0.52 * r); ctx.closePath(); ctx.fill();
+      // head
+      ctx.fillStyle = GRAY; ctx.beginPath(); ctx.ellipse(cx, cy - 0.05 * r, 0.72 * r, 0.66 * r, 0, 0, 7); ctx.fill();
+      // big amber eyes
+      ctx.fillStyle = AMBER;
+      ctx.beginPath(); ctx.arc(cx - 0.3 * r, cy - 0.12 * r, 0.22 * r, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 0.3 * r, cy - 0.12 * r, 0.22 * r, 0, 7); ctx.fill();
+      ctx.fillStyle = "#141414";
+      ctx.beginPath(); ctx.arc(cx - 0.3 * r, cy - 0.1 * r, 0.12 * r, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 0.3 * r, cy - 0.1 * r, 0.12 * r, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.beginPath(); ctx.arc(cx - 0.34 * r, cy - 0.16 * r, 0.05 * r, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 0.26 * r, cy - 0.16 * r, 0.05 * r, 0, 7); ctx.fill();
+      // nose + mouth
+      ctx.fillStyle = "#4a3a3d";
+      ctx.beginPath(); ctx.moveTo(cx, cy + 0.16 * r); ctx.lineTo(cx - 0.07 * r, cy + 0.08 * r); ctx.lineTo(cx + 0.07 * r, cy + 0.08 * r); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "#3e4146"; ctx.lineWidth = r * 0.035; ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 0.16 * r); ctx.lineTo(cx, cy + 0.23 * r);
+      ctx.moveTo(cx, cy + 0.23 * r); ctx.quadraticCurveTo(cx - 0.1 * r, cy + 0.29 * r, cx - 0.17 * r, cy + 0.22 * r);
+      ctx.moveTo(cx, cy + 0.23 * r); ctx.quadraticCurveTo(cx + 0.1 * r, cy + 0.29 * r, cx + 0.17 * r, cy + 0.22 * r);
+      ctx.stroke();
+      // whiskers
+      ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = r * 0.025;
+      [-1, 1].forEach(function (s) {
+        ctx.beginPath(); ctx.moveTo(cx + s * 0.22 * r, cy + 0.12 * r); ctx.lineTo(cx + s * 0.78 * r, cy + 0.05 * r); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + s * 0.22 * r, cy + 0.2 * r); ctx.lineTo(cx + s * 0.74 * r, cy + 0.24 * r); ctx.stroke();
+      });
+      // a little paw peeking over the bed
+      ctx.fillStyle = GRAY;
+      ctx.beginPath(); ctx.ellipse(cx, cy + 0.5 * r, 0.2 * r, 0.14 * r, 0, 0, 7); ctx.fill();
+    },
+
+    // orange tabby kitten waving a paw (from Dan's picture)
+    orangecat: function (cx, cy, r) {
+      const OR = "#f4a850", LT = "#f8cf97", ST = "#e0872f", PINK = "#f4a6ad", NOSE = "#e28f96";
+      // curled body
+      ctx.fillStyle = OR; ctx.beginPath(); ctx.ellipse(cx, cy + 0.42 * r, 0.82 * r, 0.6 * r, 0, 0, 7); ctx.fill();
+      // tail curling across the front
+      ctx.strokeStyle = OR; ctx.lineWidth = 0.26 * r; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.arc(cx + 0.05 * r, cy + 0.55 * r, 0.62 * r, -0.2, Math.PI * 0.85); ctx.stroke();
+      // belly
+      ctx.fillStyle = LT; ctx.beginPath(); ctx.ellipse(cx - 0.05 * r, cy + 0.5 * r, 0.48 * r, 0.38 * r, 0, 0, 7); ctx.fill();
+      // body stripes
+      ctx.strokeStyle = ST; ctx.lineWidth = 0.07 * r;
+      ctx.beginPath(); ctx.arc(cx, cy + 0.4 * r, 0.6 * r, -0.9, -0.3); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy + 0.45 * r, 0.7 * r, -0.7, -0.2); ctx.stroke();
+      // raised waving arm + paw
+      ctx.strokeStyle = OR; ctx.lineWidth = 0.24 * r;
+      ctx.beginPath(); ctx.moveTo(cx + 0.35 * r, cy + 0.05 * r); ctx.quadraticCurveTo(cx + 0.72 * r, cy - 0.3 * r, cx + 0.6 * r, cy - 0.72 * r); ctx.stroke();
+      ctx.fillStyle = LT; ctx.beginPath(); ctx.arc(cx + 0.58 * r, cy - 0.8 * r, 0.19 * r, 0, 7); ctx.fill();
+      // head
+      ctx.fillStyle = OR; ctx.beginPath(); ctx.arc(cx - 0.12 * r, cy - 0.42 * r, 0.5 * r, 0, 7); ctx.fill();
+      // ears (orange outer, pink inner)
+      ctx.beginPath(); ctx.moveTo(cx - 0.5 * r, cy - 0.62 * r); ctx.lineTo(cx - 0.62 * r, cy - 1.05 * r); ctx.lineTo(cx - 0.2 * r, cy - 0.78 * r); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + 0.24 * r, cy - 0.7 * r); ctx.lineTo(cx + 0.32 * r, cy - 1.06 * r); ctx.lineTo(cx - 0.02 * r, cy - 0.82 * r); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = PINK;
+      ctx.beginPath(); ctx.moveTo(cx - 0.45 * r, cy - 0.66 * r); ctx.lineTo(cx - 0.54 * r, cy - 0.96 * r); ctx.lineTo(cx - 0.28 * r, cy - 0.78 * r); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + 0.21 * r, cy - 0.74 * r); ctx.lineTo(cx + 0.27 * r, cy - 0.97 * r); ctx.lineTo(cx + 0.03 * r, cy - 0.82 * r); ctx.closePath(); ctx.fill();
+      // forehead stripes
+      ctx.strokeStyle = ST; ctx.lineWidth = 0.05 * r;
+      ctx.beginPath(); ctx.moveTo(cx - 0.12 * r, cy - 0.86 * r); ctx.lineTo(cx - 0.12 * r, cy - 0.66 * r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - 0.28 * r, cy - 0.8 * r); ctx.lineTo(cx - 0.24 * r, cy - 0.64 * r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + 0.04 * r, cy - 0.8 * r); ctx.lineTo(cx, cy - 0.64 * r); ctx.stroke();
+      // big amber eyes
+      ctx.fillStyle = "#f2b01e";
+      ctx.beginPath(); ctx.arc(cx - 0.3 * r, cy - 0.38 * r, 0.16 * r, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 0.06 * r, cy - 0.38 * r, 0.16 * r, 0, 7); ctx.fill();
+      ctx.fillStyle = "#141414";
+      ctx.beginPath(); ctx.arc(cx - 0.3 * r, cy - 0.36 * r, 0.09 * r, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 0.06 * r, cy - 0.36 * r, 0.09 * r, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.beginPath(); ctx.arc(cx - 0.33 * r, cy - 0.41 * r, 0.035 * r, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 0.03 * r, cy - 0.41 * r, 0.035 * r, 0, 7); ctx.fill();
+      // nose
+      ctx.fillStyle = NOSE;
+      ctx.beginPath(); ctx.moveTo(cx - 0.12 * r, cy - 0.15 * r); ctx.lineTo(cx - 0.19 * r, cy - 0.22 * r); ctx.lineTo(cx - 0.05 * r, cy - 0.22 * r); ctx.closePath(); ctx.fill();
+      // whiskers
+      ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 0.022 * r;
+      [-1, 1].forEach(function (s) {
+        const bx = cx - 0.12 * r;
+        ctx.beginPath(); ctx.moveTo(bx + s * 0.1 * r, cy - 0.13 * r); ctx.lineTo(bx + s * 0.62 * r, cy - 0.2 * r); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx + s * 0.1 * r, cy - 0.06 * r); ctx.lineTo(bx + s * 0.58 * r, cy - 0.03 * r); ctx.stroke();
+      });
+    },
+
     // ---- exclusive LIMITED-EDITION characters (rotate weekly) ----
     partycat: function (cx, cy, r) {
       [["#ff5a5a", -0.7, -0.5], ["#ffd23b", 0.7, -0.4], ["#5b8dff", -0.6, 0.5], ["#7ed957", 0.65, 0.55], ["#ff5aa7", 0.1, -0.9]]
@@ -501,7 +600,9 @@
     { id: "heart",    type: "art", name: "Hearty",      price: 1000 },
     { id: "strawberry", type: "art", name: "Berry",     price: 1200 },
     { id: "cloud",    type: "art", name: "Cloud Puff",  price: 1400 },
+    { id: "orangecat", type: "art", name: "Mango",      price: 1500 },
     { id: "cactus",   type: "art", name: "Spike",       price: 1600 },
+    { id: "graycat",  type: "art", name: "Smoky",       price: 1700 },
     { id: "bcat",     type: "art", name: "Bubble Cat",  price: 1900 },
     { id: "penguin",  type: "art", name: "Pengu",       price: 2200 },
     { id: "🦄",       type: "text", emoji: "🦄",        price: 2500 },
@@ -604,7 +705,8 @@
 
   let game;
   function startGame() {
-    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false, streak: 0, scene: save.scene };
+    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false, streak: 0, scene: save.scene,
+             age: 0, portalState: "waiting", portalAt: 240 + Math.floor(Math.random() * 600) };
     pickTargets(); screen = "playing";
   }
   function pickTargets() {
@@ -626,9 +728,21 @@
   function update() {
     game.spawnTimer++;
     if (game.spawnTimer >= spawnEvery()) { game.spawnTimer = 0; spawnEmoji(); }
-    for (const e of game.falling) e.y += fallSpeed();
+
+    // the secret portal appears exactly ONCE per game, at a surprise moment,
+    // darting in from a top corner
+    game.age++;
+    if (game.portalState === "waiting" && game.age >= game.portalAt) {
+      game.portalState = "active";
+      const fromLeft = Math.random() < 0.5;
+      game.falling.push({ portal: true, x: fromLeft ? 24 : W - 24, y: 100, size: 14, vx: fromLeft ? 5 : -5, vy: 1, dartTimer: 0 });
+    }
+
+    // move everything (portal darts, everything else falls straight)
+    for (const e of game.falling) { if (e.portal) movePortal(e); else e.y += fallSpeed(); }
     game.falling = game.falling.filter(function (e) {
       if (e.y - 30 > H) {
+        if (e.portal) { game.portalState = "done"; return false; }   // missed it — gone for this game
         if (game.targets.includes(e.id)) {
           game.score = Math.max(0, game.score - 5);
           addFloater(e.x, H - 70, "-5", "#ff4d4d", 40, 80);
@@ -649,15 +763,23 @@
     }
   }
   function spawnEmoji() {
-    // Rarely drop the SECRET rainbow portal (only one on screen at a time)
-    if (!game.falling.some(function (e) { return e.portal; }) && Math.random() < 0.02) {
-      game.falling.push({ id: "__portal__", portal: true, x: 40 + Math.random() * (W - 80), y: -20, size: 22 });
-      return;
-    }
     let id;
     if (Math.random() < 0.45) id = game.targets[Math.floor(Math.random() * game.targets.length)];
     else id = save.unlocked[Math.floor(Math.random() * save.unlocked.length)];
     game.falling.push({ id: id, x: 30 + Math.random() * (W - 60), y: -20, size: 44 });
+  }
+  // The secret portal darts around instead of falling straight, drifting down
+  // bit by bit so it eventually slips off the bottom if you don't catch it.
+  function movePortal(e) {
+    e.dartTimer -= 1;
+    if (e.dartTimer <= 0) {                 // pick a new zig-zag direction
+      e.vx = (Math.random() * 2 - 1) * 6;
+      e.vy = 0.8 + Math.random() * 1.7;     // always some downward drift
+      e.dartTimer = 12 + Math.floor(Math.random() * 26);
+    }
+    e.x += e.vx; e.y += e.vy;
+    if (e.x < 16) { e.x = 16; e.vx = Math.abs(e.vx); }        // bounce off the walls
+    if (e.x > W - 16) { e.x = W - 16; e.vx = -Math.abs(e.vx); }
   }
   function addFloater(x, y, text, color, size, life) {
     life = life || 45;
@@ -702,6 +824,7 @@
           if (game.streak > save.bestStreak) save.bestStreak = game.streak;
           writeSave();
           game.scene = "party";
+          game.portalState = "done";
           addFloater(e.x, e.y, "+20 PARTY!", "#ff5aa7", 30, 75);
           playFanfare();
           checkAchievements();
@@ -1187,16 +1310,18 @@
     }
   }
   // the secret rainbow portal: a swirl with rainbow dots circling it
+  // a small dark core wrapped in ONE spinning rainbow ring
   function drawPortal(cx, cy, r) {
-    const t = Date.now() / 300;
+    const t = Date.now() / 250;
     const cols = ["#ff5a5a", "#ffb347", "#ffe14d", "#7ed957", "#5b8dff", "#b06bff"];
+    const seg = Math.PI * 2 / cols.length;
+    ctx.lineWidth = r * 0.55;
     for (let i = 0; i < cols.length; i++) {
-      const a = t + i * (Math.PI * 2 / cols.length);
-      ctx.fillStyle = cols[i];
-      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r * 1.5, cy + Math.sin(a) * r * 1.5, r * 0.32, 0, 7); ctx.fill();
+      ctx.strokeStyle = cols[i];
+      ctx.beginPath(); ctx.arc(cx, cy, r * 1.15, t + i * seg, t + (i + 1) * seg + 0.05); ctx.stroke();
     }
-    ctx.fillStyle = "#2a1a5e"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.7, 0, 7); ctx.fill();
-    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.28, 0, 7); ctx.fill();
+    ctx.fillStyle = "rgba(42,26,94,0.9)"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.85, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.3, 0, 7); ctx.fill();
   }
   function roundRect(x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y);
@@ -1456,7 +1581,7 @@
 
   // Which emoji makes which sound. Anything not listed just goes "boing!"
   const SOUND_MAP = {
-    "🐱": playMeow, "bcat": playMeow, "partycat": playMeow,
+    "🐱": playMeow, "bcat": playMeow, "partycat": playMeow, "graycat": playMeow, "orangecat": playMeow,
     "🐶": playWoof,
     "🐸": playRibbit,
     "🐉": playRoar, "dino": playRoar,
