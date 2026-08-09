@@ -569,6 +569,7 @@
     if (typeof save.totalCatches !== "number") save.totalCatches = 0;  // emojis caught, all time
     if (typeof save.bestStreak !== "number") save.bestStreak = 0;      // longest correct streak
     if (typeof save.maxLevel !== "number") save.maxLevel = 1;          // highest level reached
+    if (typeof save.scene !== "string") save.scene = "default";        // unlocked background scene
   }
 
   // 🏆 Awards you EARN by playing — never buyable. When "done" becomes true,
@@ -603,7 +604,7 @@
 
   let game;
   function startGame() {
-    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false, streak: 0 };
+    game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false, streak: 0, scene: save.scene };
     pickTargets(); screen = "playing";
   }
   function pickTargets() {
@@ -648,6 +649,11 @@
     }
   }
   function spawnEmoji() {
+    // Rarely drop the SECRET rainbow portal (only one on screen at a time)
+    if (!game.falling.some(function (e) { return e.portal; }) && Math.random() < 0.02) {
+      game.falling.push({ id: "__portal__", portal: true, x: 40 + Math.random() * (W - 80), y: -20, size: 22 });
+      return;
+    }
     let id;
     if (Math.random() < 0.45) id = game.targets[Math.floor(Math.random() * game.targets.length)];
     else id = save.unlocked[Math.floor(Math.random() * save.unlocked.length)];
@@ -687,8 +693,19 @@
     for (let i = game.falling.length - 1; i >= 0; i--) {
       const e = game.falling[i];
       const dx = x - e.x, dy = y - e.y;
-      if (dx * dx + dy * dy < e.size * e.size) {
-        if (game.targets.includes(e.id)) {
+      const hitR = e.portal ? e.size + 16 : e.size;   // portal is small, so give it a kinder hitbox
+      if (dx * dx + dy * dy < hitR * hitR) {
+        if (e.portal) {
+          // 🌈 secret portal! big bonus + switch to the Party scene
+          game.score += 20; game.earned += 20; save.points += 20;
+          game.streak++; save.totalCatches++;
+          if (game.streak > save.bestStreak) save.bestStreak = game.streak;
+          writeSave();
+          game.scene = "party";
+          addFloater(e.x, e.y, "+20 PARTY!", "#ff5aa7", 30, 75);
+          playFanfare();
+          checkAchievements();
+        } else if (game.targets.includes(e.id)) {
           game.score += 10; game.earned += 10; save.points += 10;
           game.streak++; save.totalCatches++;
           if (game.streak > save.bestStreak) save.bestStreak = game.streak;
@@ -704,6 +721,32 @@
   }
   function loseHeart() { game.hearts--; game.flash = 1; if (game.hearts <= 0) { game.hearts = 0; screen = "gameover"; } }
 
+  // ---- SECRET tap pattern: tap the 4 cuties under the title left->right->left ----
+  const DECO_Y = 235, DECO_X = [W / 2 - 105, W / 2 - 35, W / 2 + 35, W / 2 + 105];
+  const SKY_PATTERN = [0, 1, 2, 3, 2, 1, 0];
+  let skySeq = [];
+  function detectSkyTaps(x, y) {
+    for (let i = 0; i < 4; i++) {
+      const dx = x - DECO_X[i], dy = y - DECO_Y;
+      if (dx * dx + dy * dy < 34 * 34) {
+        if (skySeq[skySeq.length - 1] !== i) skySeq.push(i);  // ignore repeated taps on the same cutie
+        if (skySeq.length > 12) skySeq = skySeq.slice(-12);
+        let ok = skySeq.length >= SKY_PATTERN.length;
+        for (let k = 0; ok && k < SKY_PATTERN.length; k++) {
+          if (skySeq[skySeq.length - SKY_PATTERN.length + k] !== SKY_PATTERN[k]) ok = false;
+        }
+        if (ok) { skySeq = []; toggleSky(); }
+        return;
+      }
+    }
+  }
+  function toggleSky() {
+    save.scene = (save.scene === "sky") ? "default" : "sky";
+    writeSave();
+    showToast(save.scene === "sky" ? "☁️ Sky scene unlocked!" : "Sky scene turned off");
+    playFanfare();
+  }
+
   function tapStart(x, y) {
     if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
     if (hit(HELP_MENU, x, y)) { screen = "help"; return; }
@@ -712,6 +755,7 @@
     if (hit(BTN_STORE, x, y)) return openStore("start");
     if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; storeScroll = 0; return; }
     if (hit(BTN_AWARDS, x, y)) { screen = "awards"; return; }
+    detectSkyTaps(x, y);   // no button hit — maybe it's the secret pattern
   }
   function tapCollection(x, y) {
     if (hit(STORE_BACK, x, y)) { screen = "start"; return; }
@@ -866,7 +910,11 @@
   }
 
   function drawGame() {
-    for (const e of game.falling) renderItem(e.id, e.x, e.y, e.size);
+    drawScene(game.scene);   // paint the background scene first
+    for (const e of game.falling) {
+      if (e.portal) drawPortal(e.x, e.y, e.size);
+      else renderItem(e.id, e.x, e.y, e.size);
+    }
     for (const f of game.floaters) {
       ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
       ctx.fillStyle = f.color; ctx.font = "bold " + f.size + "px -apple-system, Arial";
@@ -969,6 +1017,9 @@
 
   function drawStart() {
     bgFill();
+    if (save.scene === "sky") {  // subtle hint that the sky easter egg is active
+      ctx.globalAlpha = 0.45; drawCloud(60, 95, 22); drawCloud(356, 118, 26); ctx.globalAlpha = 1;
+    }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillStyle = "white"; ctx.font = "bold 46px -apple-system, Arial";
     ctx.fillText("🎯 Emoji", W / 2, 120); ctx.fillText("Catch", W / 2, 175);
@@ -1104,6 +1155,48 @@
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "#2a1a5e"); g.addColorStop(1, "#1b1035");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+
+  // ---- background scenes (easter eggs!) ----
+  function drawCloud(cx, cy, r) {
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    [[0, 0, 1], [-0.7, 0.12, 0.62], [0.7, 0.12, 0.62], [-0.35, -0.25, 0.55], [0.4, -0.2, 0.55]]
+      .forEach(function (b) { ctx.beginPath(); ctx.arc(cx + b[0] * r, cy + b[1] * r, b[2] * r, 0, 7); ctx.fill(); });
+    ctx.fillRect(cx - r * 0.7, cy, r * 1.4, r * 0.42);
+  }
+  function drawScene(s) {
+    if (s === "sky") {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#6fc0ff"); g.addColorStop(1, "#d8f0ff");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      drawCloud(75, 150, 34); drawCloud(330, 250, 42); drawCloud(150, 400, 38);
+      drawCloud(320, 520, 30); drawCloud(70, 580, 30);
+    } else if (s === "party") {
+      // disco: horizontal bands whose colours cycle over time
+      const cols = ["#ff6b6b", "#ffb84d", "#ffe14d", "#7ed957", "#5b8dff", "#b06bff"];
+      const shift = Math.floor(Date.now() / 140) % cols.length, n = 6, bandH = H / n;
+      for (let i = 0; i < n; i++) {
+        ctx.globalAlpha = 0.6; ctx.fillStyle = cols[(i + shift) % cols.length];
+        ctx.fillRect(0, i * bandH, W, bandH + 1);
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#bfe9ff"); g.addColorStop(1, "#eafff0");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+  }
+  // the secret rainbow portal: a swirl with rainbow dots circling it
+  function drawPortal(cx, cy, r) {
+    const t = Date.now() / 300;
+    const cols = ["#ff5a5a", "#ffb347", "#ffe14d", "#7ed957", "#5b8dff", "#b06bff"];
+    for (let i = 0; i < cols.length; i++) {
+      const a = t + i * (Math.PI * 2 / cols.length);
+      ctx.fillStyle = cols[i];
+      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r * 1.5, cy + Math.sin(a) * r * 1.5, r * 0.32, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = "#2a1a5e"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.7, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx, cy, r * 0.28, 0, 7); ctx.fill();
   }
   function roundRect(x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y);
