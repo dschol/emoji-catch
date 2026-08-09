@@ -742,26 +742,45 @@
     drawButton(QUIT_BTN, "⏹  Quit to Menu", "#e74c3c");
   }
   function drawTopBar() {
-    ctx.fillStyle = "rgba(27,16,53,0.9)"; ctx.fillRect(0, 0, W, 76);
+    ctx.fillStyle = "rgba(27,16,53,0.9)"; ctx.fillRect(0, 0, W, 88);
     ctx.textBaseline = "middle"; ctx.fillStyle = "white"; ctx.textAlign = "left";
     ctx.font = "bold 16px -apple-system, Arial";
-    ctx.fillText("Find:", 12, 24);
+    ctx.fillText("Find:", 12, 22);
     // draw each target character next to "Find:"
     let tx = 66;
-    for (const id of game.targets) { renderItem(id, tx, 24, 30); tx += 36; }
+    for (const id of game.targets) { renderItem(id, tx, 22, 30); tx += 36; }
     // hearts — drawn as SHAPES (not emoji) so they show the same on every device.
     // Always 3 slots: a filled red heart for each life left, a gray outline for lost ones.
     for (let i = 0; i < 3; i++) {
-      const hx = W - 70 + i * 26, hy = 22, hr = 9;
+      const hx = W - 70 + i * 26, hy = 20, hr = 9;
       heartPath(hx, hy, hr);
       if (i < game.hearts) { ctx.fillStyle = "#ff4d6d"; ctx.fill(); }
       else { ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 2; ctx.stroke(); }
     }
     // score + piggy bank
-    ctx.font = "bold 15px -apple-system, Arial"; ctx.fillStyle = "#ffd93b"; ctx.textAlign = "left";
-    ctx.fillText("Lvl " + game.level + " · ⭐ " + game.score, 12, 58);
+    ctx.font = "bold 15px -apple-system, Arial"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffd93b"; ctx.textAlign = "left";
+    ctx.fillText("Lvl " + game.level + " · ⭐ " + game.score, 12, 48);
     ctx.textAlign = "right"; ctx.fillStyle = "#ffe08a";
-    ctx.fillText("🪙 " + save.points, W - 12, 58);
+    ctx.fillText("🪙 " + save.points, W - 12, 48);
+
+    // ---- progress toward the next level ----
+    const nextGoal = LEVEL_GOALS[game.level];       // score needed to level up
+    const bx = 12, bw = W - 24, by = 76, bh = 8;
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; roundRect(bx, by, bw, bh, 4); ctx.fill();  // track
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (nextGoal !== undefined) {
+      const prevGoal = LEVEL_GOALS[game.level - 1] || 0;
+      const prog = Math.max(0, Math.min(1, (game.score - prevGoal) / (nextGoal - prevGoal)));
+      ctx.fillStyle = "#7ee0ff"; roundRect(bx, by, Math.max(bh, bw * prog), bh, 4); ctx.fill();
+      const need = Math.max(1, Math.ceil((nextGoal - game.score) / 10));
+      ctx.fillStyle = "#cdefff"; ctx.font = "bold 13px -apple-system, Arial";
+      ctx.fillText("Catch " + need + " more to reach Level " + (game.level + 1) + "!", W / 2, 64);
+    } else {
+      ctx.fillStyle = "#ffd93b"; roundRect(bx, by, bw, bh, 4); ctx.fill();
+      ctx.fillStyle = "#ffd93b"; ctx.font = "bold 13px -apple-system, Arial";
+      ctx.fillText("★ MAX LEVEL — you're a champion! ★", W / 2, 64);
+    }
   }
   function drawLevelUp() {
     ctx.fillStyle = "rgba(27,16,53,0.9)"; ctx.fillRect(0, 0, W, H);
