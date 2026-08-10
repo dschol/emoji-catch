@@ -570,6 +570,41 @@
       ctx.restore();
       kawaiiFace(cx, cy, r * 0.5);
     },
+
+    // ---- INVITE rewards: unlocked only by inviting friends (never buyable) ----
+    gift: function (cx, cy, r) {
+      ctx.fillStyle = "#ff5a7a"; roundRect(cx - 0.7 * r, cy - 0.3 * r, 1.4 * r, 1.0 * r, 0.12 * r); ctx.fill();
+      ctx.fillStyle = "#ff8aa0"; roundRect(cx - 0.78 * r, cy - 0.48 * r, 1.56 * r, 0.28 * r, 0.1 * r); ctx.fill();
+      ctx.fillStyle = "#ffd23b"; ctx.fillRect(cx - 0.1 * r, cy - 0.48 * r, 0.2 * r, 0.22 * r);
+      ctx.beginPath(); ctx.ellipse(cx - 0.2 * r, cy - 0.6 * r, 0.16 * r, 0.11 * r, -0.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx + 0.2 * r, cy - 0.6 * r, 0.16 * r, 0.11 * r, 0.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy - 0.58 * r, 0.08 * r, 0, 7); ctx.fill();
+      kawaiiFace(cx, cy + 0.2 * r, 0.55 * r);
+    },
+    buddies: function (cx, cy, r) {
+      ctx.fillStyle = "#7ed957"; ctx.beginPath(); ctx.arc(cx - 0.42 * r, cy + 0.1 * r, 0.5 * r, 0, 7); ctx.fill();
+      ctx.fillStyle = "#5b8dff"; ctx.beginPath(); ctx.arc(cx + 0.42 * r, cy + 0.1 * r, 0.5 * r, 0, 7); ctx.fill();
+      kawaiiFace(cx - 0.42 * r, cy + 0.1 * r, 0.42 * r);
+      kawaiiFace(cx + 0.42 * r, cy + 0.1 * r, 0.42 * r);
+      ctx.fillStyle = "#ff6b9d"; heartPath(cx, cy - 0.52 * r, 0.16 * r); ctx.fill();
+    },
+    heartcrown: function (cx, cy, r) {
+      ctx.fillStyle = "#ffd23b"; roundRect(cx - 0.7 * r, cy + 0.15 * r, 1.4 * r, 0.45 * r, 0.08 * r); ctx.fill();
+      ctx.fillStyle = "#ff6b9d";
+      heartPath(cx - 0.45 * r, cy - 0.08 * r, 0.2 * r); ctx.fill();
+      heartPath(cx, cy - 0.22 * r, 0.24 * r); ctx.fill();
+      heartPath(cx + 0.45 * r, cy - 0.08 * r, 0.2 * r); ctx.fill();
+      ctx.fillStyle = "#5be3ff"; ctx.beginPath(); ctx.arc(cx, cy + 0.37 * r, 0.08 * r, 0, 7); ctx.fill();
+      kawaiiFace(cx, cy + 0.42 * r, 0.3 * r);
+    },
+    sparkleheart: function (cx, cy, r) {
+      heartPath(cx, cy, r * 0.95); ctx.save(); ctx.clip();
+      const cols = ["#ff5a5a", "#ffb347", "#ffe14d", "#7ed957", "#5b8dff", "#b06bff"], bh = (2 * r) / cols.length;
+      cols.forEach(function (c, i) { ctx.fillStyle = c; ctx.fillRect(cx - r, cy - r + i * bh, 2 * r, bh + 1); });
+      ctx.restore();
+      [[-0.5, -0.3], [0.55, -0.1], [0.2, 0.42]].forEach(function (s) { starShape(cx + s[0] * r, cy + s[1] * r, 0.1 * r, "#fff"); });
+      kawaiiFace(cx, cy + 0.05 * r, 0.5 * r);
+    },
   };
 
   // =====================================================================
@@ -629,6 +664,11 @@
     { id: "flame",      type: "art", name: "Hot Streak",      achievement: true },
     { id: "crownach",   type: "art", name: "Level 10 Crown",  achievement: true },
     { id: "rainbowstar", type: "art", name: "1000 Club",      achievement: true },
+    // 🎁 INVITE rewards - unlocked only by inviting friends (never for sale)
+    { id: "gift",        type: "art", name: "Gift Box",      referral: true },
+    { id: "buddies",     type: "art", name: "Best Buddies",  referral: true },
+    { id: "heartcrown",  type: "art", name: "Heart Crown",   referral: true },
+    { id: "sparkleheart", type: "art", name: "Sparkle Heart", referral: true },
   ];
   const BYID = {};
   CATALOG.forEach(function (c) { BYID[c.id] = c; });
@@ -657,11 +697,12 @@
   // =====================================================================
   const SAVE_KEY = "emojiCatchSave2";   // v2 because the catalog changed
   let save;
+  let isFreshInstall = false;           // true only on the very first load on this device
   function loadSave() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      save = raw ? JSON.parse(raw) : { points: 0, unlocked: [] };
-    } catch (e) { save = { points: 0, unlocked: [] }; }
+    let raw = null;
+    try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+    isFreshInstall = !raw;              // a brand-new player (used to credit referrals)
+    try { save = raw ? JSON.parse(raw) : { points: 0, unlocked: [] }; } catch (e) { save = { points: 0, unlocked: [] }; }
     const set = new Set(save.unlocked);
     STARTERS.forEach(function (e) { set.add(e); });
     save.unlocked = Array.from(set);
@@ -675,6 +716,8 @@
     if (typeof save.name !== "string" || !save.name) save.name = generateNickname();     // silly leaderboard nickname
     if (typeof save.bestScore !== "number") save.bestScore = 0;         // best score we've submitted
     if (typeof save.nameLocked !== "boolean") save.nameLocked = false;  // name is set in stone once chosen
+    if (typeof save.referredBy !== "string") save.referredBy = "";      // who invited us (once)
+    if (typeof save.referrals !== "number") save.referrals = 0;         // friends we've invited (cached)
   }
 
   // ---- silly nickname generator (no real names, nothing to type) ----
@@ -699,7 +742,7 @@
     { id: "crownach",    how: "Reach Level 10",      done: function () { return save.maxLevel >= 10; } },
     { id: "rainbowstar", how: "Catch 1000 emojis",   done: function () { return save.totalCatches >= 1000; }, progress: function () { return save.totalCatches + " / 1000"; } },
   ];
-  let achToast = null;  // { id, life } — the "New Award!" banner
+  let achToast = null;  // { id, life, title, sub } — the reward banner
   function checkAchievements() {
     for (const a of ACHIEVEMENTS) {
       if (!owned(a.id) && a.done()) {
@@ -709,6 +752,24 @@
       }
     }
   }
+
+  // 🎁 Invite rewards - unlocked ONLY by inviting friends (never buyable)
+  const REFERRAL_TIERS = [
+    { id: "gift",         need: 1 },
+    { id: "buddies",      need: 3 },
+    { id: "heartcrown",   need: 5 },
+    { id: "sparkleheart", need: 10 },
+  ];
+  function checkReferralUnlocks(count) {
+    for (const tier of REFERRAL_TIERS) {
+      if (count >= tier.need && !owned(tier.id)) {
+        save.unlocked.push(tier.id); writeSave();
+        achToast = { id: tier.id, life: 220, title: "Friend Reward!", sub: "Thanks for inviting!" };
+        playFanfare();
+      }
+    }
+  }
+
   function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
   function owned(id) { return save.unlocked.includes(id); }
 
@@ -821,6 +882,7 @@
     if (screen === "awards")   return tapAwards(x, y);
     if (screen === "leaderboard") return tapLeaderboard(x, y);
     if (screen === "namepick") return tapNamePick(x, y);
+    if (screen === "invite") return tapInvite(x, y);
   }
   function tapGame(x, y) {
     // If paused, only the pause-menu buttons work
@@ -900,7 +962,7 @@
   function tapStart(x, y) {
     if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
     if (hit(HELP_MENU, x, y)) { screen = "help"; return; }
-    if (hit(SHARE_MENU, x, y)) { shareGame(); return; }
+    if (hit(SHARE_MENU, x, y)) { openInvite("start"); return; }
     if (hit(BTN_PLAY, x, y)) return startGame();
     if (hit(BTN_STORE, x, y)) return openStore("start");
     if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; storeScroll = 0; return; }
@@ -998,7 +1060,7 @@
     ctx.globalAlpha = 1;
   }
   function shareGame() {
-    const url = "https://dschol.github.io/emoji-catch/";
+    const url = inviteLink();   // include our invite code so shares also count as invites
     const data = { title: "Emoji Catch", text: "Play Emoji Catch — a fun emoji-tapping game! 🎯🐱🍕", url: url };
     // Phones: open the native share sheet (Messages, AirDrop, etc.)
     if (navigator.share) { navigator.share(data).catch(function () {}); }
@@ -1025,6 +1087,73 @@
       method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
       body: JSON.stringify({ type: type, ms: ms, id: save.playerId }),
     }).catch(function () {});
+  }
+
+  // ---------- referrals / invites ----------
+  let inviteReturn = "start";
+  function inviteLink() { return "https://dschol.github.io/emoji-catch/?ref=" + save.playerId; }
+  function bootstrapReferral() {
+    let ref = "";
+    try { ref = new URLSearchParams(location.search).get("ref") || ""; } catch (e) {}
+    ref = ref.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 40);
+    // only credit a brand-new player who arrived via someone else's link
+    if (ref && isFreshInstall && ref !== save.playerId && !save.referredBy) {
+      save.referredBy = ref; writeSave();
+      if (LEADERBOARD_URL) fetch(LEADERBOARD_URL + "refer", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referrer: ref, newId: save.playerId }),
+      }).catch(function () {});
+    }
+    fetchRefCount();
+  }
+  function fetchRefCount() {
+    if (!LEADERBOARD_URL) return;
+    fetch(LEADERBOARD_URL + "refcount?id=" + encodeURIComponent(save.playerId))
+      .then(function (r) { return r.json(); })
+      .then(function (res) { if (res && typeof res.count === "number") { save.referrals = res.count; writeSave(); checkReferralUnlocks(res.count); } })
+      .catch(function () {});
+  }
+  function openInvite(from) { inviteReturn = from; screen = "invite"; fetchRefCount(); }
+  function shareInvite() {
+    const url = inviteLink();
+    const data = { title: "Emoji Catch", text: "Come play Emoji Catch with me! 🎯", url: url };
+    if (navigator.share) { navigator.share(data).catch(function () {}); }
+    else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { showToast("Invite link copied! 📋"); }, function () { showToast(url); });
+    } else { showToast(url); }
+  }
+  function tapInvite(x, y) {
+    if (hit(STORE_BACK, x, y)) { screen = inviteReturn; return; }
+    if (hit(STORE_PLAY, x, y)) return startGame();
+    if (hit(INVITE_SHARE, x, y)) { shareInvite(); return; }
+  }
+  function drawInvite() {
+    bgFill();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#8effa0"; ctx.font = "bold 19px -apple-system, Arial";
+    ctx.fillText("Friends joined: " + save.referrals, W / 2, STORE_HEADER + 30);
+    ctx.fillStyle = "#9fe8ff"; ctx.font = "13px -apple-system, Arial";
+    ctx.fillText("When a friend opens your link and plays,", W / 2, STORE_HEADER + 56);
+    ctx.fillText("you unlock emojis you can't buy!", W / 2, STORE_HEADER + 74);
+    let y = 168;
+    for (const tier of REFERRAL_TIERS) {
+      const got = owned(tier.id);
+      roundRect(30, y - 26, W - 60, 52, 12); ctx.fillStyle = got ? "rgba(46,204,113,0.28)" : "rgba(255,255,255,0.07)"; ctx.fill();
+      ctx.globalAlpha = got ? 1 : 0.4; renderItem(tier.id, 60, y, 38); ctx.globalAlpha = 1;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = got ? "#8effa0" : "white"; ctx.font = "bold 15px -apple-system, Arial";
+      ctx.fillText(itemLabel(tier.id), 98, y - 7);
+      ctx.fillStyle = "#cdd6ff"; ctx.font = "12px -apple-system, Arial";
+      ctx.fillText(got ? "Unlocked!" : ("Invite " + tier.need + " friend" + (tier.need > 1 ? "s" : "")), 98, y + 12);
+      y += 62;
+    }
+    drawButton(INVITE_SHARE, "📤  Share my invite link", "#2ecc71");
+    drawUiToast();
+    ctx.fillStyle = "#1b1035"; ctx.fillRect(0, 0, W, STORE_HEADER);
+    drawButton(STORE_BACK, "◀ Back", "#6c5ce7", 18);
+    drawButton(STORE_PLAY, "▶ Play", "#2ecc71", 18);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffe08a"; ctx.font = "bold 20px -apple-system, Arial";
+    ctx.fillText("🎁 Invite Friends", W / 2, 30);
   }
   function postScore(score) {
     if (!LEADERBOARD_URL || !(score > 0)) return;
@@ -1171,6 +1300,7 @@
     if (screen === "awards")   drawAwards();
     if (screen === "leaderboard") drawLeaderboard();
     if (screen === "namepick") drawNamePick();
+    if (screen === "invite") drawInvite();
   }
 
   function drawGame() {
@@ -1207,11 +1337,11 @@
     renderItem(a.id, bx + 50, by + bh / 2, 60);
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
     ctx.fillStyle = "#ffd23b"; ctx.font = "bold 19px -apple-system, Arial";
-    ctx.fillText("🏆 New Award!", bx + 96, by + 26);
+    ctx.fillText("🏆 " + (a.title || "New Award!"), bx + 96, by + 26);
     ctx.fillStyle = "white"; ctx.font = "bold 17px -apple-system, Arial";
     ctx.fillText(itemLabel(a.id), bx + 96, by + 50);
     ctx.fillStyle = "#9fe8ff"; ctx.font = "13px -apple-system, Arial";
-    ctx.fillText("Earned, not bought!", bx + 96, by + 72);
+    ctx.fillText(a.sub || "Earned, not bought!", bx + 96, by + 72);
     ctx.globalAlpha = 1;
   }
 
@@ -1303,7 +1433,7 @@
     drawButton(BTN_LEADER, "🏅  Leaderboard", "#5b8dff", 21);
     drawButton(MUTE_MENU, save.muted ? "🔇" : "🔊", "#6c5ce7", 18);
     drawButton(HELP_MENU, "❓", "#6c5ce7", 18);
-    drawButton(SHARE_MENU, "📤", "#6c5ce7", 18);
+    drawButton(SHARE_MENU, "🎁", "#6c5ce7", 18);
     drawUiToast();
   }
 
@@ -1516,6 +1646,7 @@
   const PICK_REROLL  = { x: 60, y: 356, w: 300, h: 56 };
   const PICK_CONFIRM = { x: 60, y: 428, w: 300, h: 56 };
   const PICK_BACK    = { x: 12, y: 14, w: 92, h: 34 };
+  const INVITE_SHARE = { x: 40, y: 452, w: W - 80, h: 56 };
   const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
   const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
   const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
@@ -1528,7 +1659,7 @@
   // 5 columns; the whole grid slides up/down by storeScroll when there are lots of items
   const TILE_H = 82, ROW_GAP = 8, GRID_TOP = STORE_HEADER + 8, SPECIAL_H = 132;
   const WEEK = 7 * 24 * 60 * 60 * 1000;
-  const STORE_GRID = CATALOG.filter(function (c) { return !c.limited && !c.achievement; });
+  const STORE_GRID = CATALOG.filter(function (c) { return !c.limited && !c.achievement && !c.referral; });
   const LIMITEDS = CATALOG.filter(function (c) { return c.limited; });
 
   // Which limited-edition character is available right now — it rotates weekly,
@@ -1791,6 +1922,7 @@
   document.addEventListener("visibilitychange", function () { if (document.hidden) writeSave(); });
 
   loadSave();
+  bootstrapReferral();
   loop();
   </script>
 

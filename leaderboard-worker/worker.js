@@ -109,6 +109,32 @@ export default {
       return new Response(statsHTML(rows), { headers: Object.assign({ "Content-Type": "text/html;charset=UTF-8" }, CORS) });
     }
 
+    // ---- referrals: how many friends has this player invited? ----
+    if (path === "/refcount") {
+      const id = String(url.searchParams.get("id") || "").replace(/[^a-zA-Z0-9-]/g, "").slice(0, 40);
+      const count = Number((await env.LEADERBOARD.get("refcount:" + id)) || 0);
+      return json({ count: count });
+    }
+    // ---- referrals: credit a referrer when a NEW player joins via their link ----
+    if (path === "/refer") {
+      if (request.method !== "POST") return json({ error: "POST only" }, 405);
+      let body; try { body = await request.json(); } catch (e) { return json({ error: "bad json" }, 400); }
+      const clean = function (v) { return String(v || "").replace(/[^a-zA-Z0-9-]/g, "").slice(0, 40); };
+      const referrer = clean(body.referrer), newId = clean(body.newId);
+      if (!referrer || !newId || referrer === newId) return json({ ok: false });
+      // each new player can only ever be counted once
+      const already = await env.LEADERBOARD.get("referredBy:" + newId);
+      if (already) return json({ ok: false, already: true });
+      // light rate limit per IP
+      const rlKey = "rlrefer:" + (await hashHex(request.headers.get("CF-Connecting-IP") || "0"));
+      if (Date.now() - Number((await env.LEADERBOARD.get(rlKey)) || 0) < 2000) return json({ ok: false });
+      await env.LEADERBOARD.put(rlKey, String(Date.now()), { expirationTtl: 60 });
+      await env.LEADERBOARD.put("referredBy:" + newId, referrer);
+      const count = Number((await env.LEADERBOARD.get("refcount:" + referrer)) || 0) + 1;
+      await env.LEADERBOARD.put("refcount:" + referrer, String(count));
+      return json({ ok: true, count: count });
+    }
+
     // ---- leaderboard (default "/") ----
     let board = [];
     try { board = JSON.parse((await env.LEADERBOARD.get("board")) || "[]"); } catch (e) { board = []; }
