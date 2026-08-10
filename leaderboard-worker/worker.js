@@ -1,16 +1,14 @@
-// =====================================================================
-//  Emoji Catch — Leaderboard + private play-analytics Worker (Cloudflare)
-//  Bind a KV namespace to this Worker with the variable name: LEADERBOARD
+// Emoji Catch - Leaderboard + private play-analytics Worker (Cloudflare)
+// Bind a KV namespace to this Worker with the variable name: LEADERBOARD
 //
-//  Routes:
-//    GET  /                 -> top 20 scores (public): [{ name, score }]
-//    POST /                 -> body { name, score, id }; add/update a score
-//    POST /event            -> body { type:"start"|"end", ms, id }; anonymous stats
-//    GET  /stats?key=XXXX   -> private stats dashboard (HTML; add &format=json for JSON)
+// Routes:
+//   GET  /                 -> top 20 scores (public): [{ name, score }]
+//   POST /                 -> body { name, score, id }; add/update a score
+//   POST /event            -> body { type:"start"|"end", ms, id }; anonymous stats
+//   GET  /stats?key=XXXX   -> private stats dashboard (HTML; add &format=json for JSON)
 //
-//  Privacy: the stats store ONLY anonymous daily totals — no names, emails, or
-//  IPs. Device ids are hashed before being counted for "unique players".
-// =====================================================================
+// Privacy: the stats store ONLY anonymous daily totals - no names, emails, or
+// IPs. Device ids are hashed before being counted for "unique players".
 
 const MAX_SCORE = 100000;
 const KEEP = 200;
@@ -46,18 +44,18 @@ function statsHTML(rows) {
   const totalPlays = rows.reduce(function (a, r) { return a + r.plays; }, 0);
   const t = rows[0];
   const cells = rows.map(function (r) {
-    return "<tr><td>" + r.day + "</td><td>" + r.plays + "</td><td>" + r.players + "</td><td>" + (r.avgSec ? r.avgSec + "s" : "—") + "</td></tr>";
+    return "<tr><td>" + r.day + "</td><td>" + r.plays + "</td><td>" + r.players + "</td><td>" + (r.avgSec ? r.avgSec + "s" : "-") + "</td></tr>";
   }).join("");
   return "<!doctype html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>" +
-    "<title>Emoji Catch — Stats</title><style>body{font-family:-apple-system,Arial;background:#1b1035;color:#fff;padding:20px}" +
+    "<title>Emoji Catch Stats</title><style>body{font-family:-apple-system,Arial;background:#1b1035;color:#fff;padding:20px}" +
     "h1{font-size:20px}table{border-collapse:collapse;width:100%;max-width:520px}th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #3a2b5a}" +
     "th{color:#ffe08a}tr:nth-child(2) td{color:#8effa0;font-weight:bold}.big{font-size:15px;color:#9fe8ff;margin:10px 0}" +
     ".note{opacity:.6;font-size:12px;margin-top:16px}</style></head><body>" +
-    "<h1>🎯 Emoji Catch — Play Stats</h1>" +
-    "<div class=big>Today: <b>" + t.plays + "</b> plays · <b>" + t.players + "</b> players · avg game <b>" + (t.avgSec ? t.avgSec + "s" : "—") + "</b></div>" +
+    "<h1>Emoji Catch - Play Stats</h1>" +
+    "<div class=big>Today: <b>" + t.plays + "</b> plays, <b>" + t.players + "</b> players, avg game <b>" + (t.avgSec ? t.avgSec + "s" : "-") + "</b></div>" +
     "<div class=big>Last " + rows.length + " days: <b>" + totalPlays + "</b> total plays</div>" +
     "<table><tr><th>Day</th><th>Plays</th><th>Players</th><th>Avg game</th></tr>" + cells + "</table>" +
-    "<div class=note>Privacy: only anonymous daily totals are stored — no names, emails, or IPs. “Players” = unique devices.</div>" +
+    "<div class=note>Privacy: only anonymous daily totals are stored - no names, emails, or IPs. 'Players' = unique devices.</div>" +
     "</body></html>";
 }
 
