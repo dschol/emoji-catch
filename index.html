@@ -723,8 +723,9 @@
   let game;
   function startGame() {
     game = { score: 0, earned: 0, hearts: 3, level: 1, targets: [], falling: [], floaters: [], spawnTimer: 0, pause: 0, flash: 0, paused: false, streak: 0, scene: save.scene,
-             age: 0, portalState: "waiting", portalAt: 240 + Math.floor(Math.random() * 600) };
+             age: 0, portalState: "waiting", portalAt: 240 + Math.floor(Math.random() * 600), startedAt: Date.now() };
     pickTargets(); screen = "playing";
+    sendEvent("start");
   }
   function pickTargets() {
     const howMany = Math.min(game.level, 4, save.unlocked.length);
@@ -861,7 +862,14 @@
       }
     }
   }
-  function loseHeart() { game.hearts--; game.flash = 1; if (game.hearts <= 0) { game.hearts = 0; screen = "gameover"; submitScore(); } }
+  function loseHeart() {
+    game.hearts--; game.flash = 1;
+    if (game.hearts <= 0) {
+      game.hearts = 0; screen = "gameover";
+      submitScore();
+      sendEvent("end", Date.now() - (game.startedAt || Date.now()));
+    }
+  }
 
   // ---- SECRET tap pattern: tap the 4 cuties under the title left->right->left ----
   const DECO_Y = 235, DECO_X = [W / 2 - 105, W / 2 - 35, W / 2 + 35, W / 2 + 105];
@@ -1009,6 +1017,14 @@
     if (game.score > save.bestScore) { save.bestScore = game.score; writeSave(); }
     if (!save.nameLocked) return;      // haven't joined yet — they pick a name first
     postScore(save.bestScore);
+  }
+  // Anonymous play analytics — fire-and-forget, aggregate only (no personal data)
+  function sendEvent(type, ms) {
+    if (!LEADERBOARD_URL) return;
+    fetch(LEADERBOARD_URL + "event", {
+      method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ type: type, ms: ms, id: save.playerId }),
+    }).catch(function () {});
   }
   function postScore(score) {
     if (!LEADERBOARD_URL || !(score > 0)) return;
