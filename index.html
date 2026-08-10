@@ -674,6 +674,7 @@
     if (typeof save.playerId !== "string" || !save.playerId) save.playerId = makeId();  // anonymous id (for future referrals)
     if (typeof save.name !== "string" || !save.name) save.name = generateNickname();     // silly leaderboard nickname
     if (typeof save.bestScore !== "number") save.bestScore = 0;         // best score we've submitted
+    if (typeof save.nameLocked !== "boolean") save.nameLocked = false;  // name is set in stone once chosen
   }
 
   // ---- silly nickname generator (no real names, nothing to type) ----
@@ -687,15 +688,7 @@
     const n = NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
     return (a + n + (10 + Math.floor(Math.random() * 90))).slice(0, 14);
   }
-  let nameSyncTimer = null;
-  function rerollName() {
-    save.name = generateNickname(); writeSave(); playBoing();
-    // if we're already on the leaderboard, push the new name up (debounced)
-    if (save.bestScore > 0) {
-      if (nameSyncTimer) clearTimeout(nameSyncTimer);
-      nameSyncTimer = setTimeout(syncName, 900);
-    }
-  }
+  function rollNewName() { save.name = generateNickname(); writeSave(); playBoing(); }
 
   // 🏆 Awards you EARN by playing — never buyable. When "done" becomes true,
   // the award emoji is added to your collection and starts appearing in the game.
@@ -826,6 +819,7 @@
     if (screen === "help")     return tapHelp(x, y);
     if (screen === "awards")   return tapAwards(x, y);
     if (screen === "leaderboard") return tapLeaderboard(x, y);
+    if (screen === "namepick") return tapNamePick(x, y);
   }
   function tapGame(x, y) {
     // If paused, only the pause-menu buttons work
@@ -899,12 +893,11 @@
     if (hit(MUTE_MENU, x, y)) { toggleMute(); return; }
     if (hit(HELP_MENU, x, y)) { screen = "help"; return; }
     if (hit(SHARE_MENU, x, y)) { shareGame(); return; }
-    if (hit(LEADER_MENU, x, y)) { openLeaderboard("start"); return; }
-    if (hit(REROLL_BTN, x, y)) { rerollName(); return; }
     if (hit(BTN_PLAY, x, y)) return startGame();
     if (hit(BTN_STORE, x, y)) return openStore("start");
     if (hit(BTN_COLLECTION, x, y)) { screen = "collection"; storeScroll = 0; return; }
     if (hit(BTN_AWARDS, x, y)) { screen = "awards"; return; }
+    if (hit(BTN_LEADER, x, y)) { openLeaderboard("start"); return; }
     detectSkyTaps(x, y);   // no button hit — maybe it's the secret pattern
   }
   function tapCollection(x, y) {
@@ -1009,27 +1002,24 @@
 
   // ---------- leaderboard (Cloudflare Worker) ----------
   const LEADERBOARD_URL = "https://emoji-catch-leaderboard.dan-scholnick.workers.dev/";
-  let lbBoard = [], lbStatus = "idle", lbRank = null, lbReturn = "start";
-  function submitScore() {
-    if (!LEADERBOARD_URL || game.score <= 0) return;   // don't submit empty runs
+  let lbBoard = [], lbStatus = "idle", lbRank = null, lbReturn = "start", lbSubmitting = false;
+  function submitScore() {   // called automatically at game over
+    lbRank = null; lbSubmitting = false;               // clear any old result
+    if (game.score <= 0) return;
     if (game.score > save.bestScore) { save.bestScore = game.score; writeSave(); }
-    fetch(LEADERBOARD_URL, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: save.name, score: game.score, id: save.playerId }),
-    }).then(function (r) { return r.json(); }).then(function (res) {
-      if (res && res.ok) { lbRank = res.rank; if (res.top) lbBoard = res.top; }
-    }).catch(function () {});
+    if (!save.nameLocked) return;      // haven't joined yet — they pick a name first
+    postScore(save.bestScore);
   }
-  // Re-send our BEST score under the new name — this updates the name on the
-  // board without changing our score (works with the existing Worker).
-  function syncName() {
-    if (!LEADERBOARD_URL || !(save.bestScore > 0)) return;
+  function postScore(score) {
+    if (!LEADERBOARD_URL || !(score > 0)) return;
+    lbSubmitting = true;
     fetch(LEADERBOARD_URL, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: save.name, score: save.bestScore, id: save.playerId }),
+      body: JSON.stringify({ name: save.name, score: score, id: save.playerId }),
     }).then(function (r) { return r.json(); }).then(function (res) {
+      lbSubmitting = false;
       if (res && res.ok) { lbRank = res.rank; if (res.top) lbBoard = res.top; }
-    }).catch(function () {});
+    }).catch(function () { lbSubmitting = false; });
   }
   function fetchBoard() {
     lbStatus = "loading";
@@ -1037,7 +1027,37 @@
       lbBoard = Array.isArray(list) ? list : []; lbStatus = "ok";
     }).catch(function () { lbStatus = "error"; });
   }
-  function openLeaderboard(from) { lbReturn = from; screen = "leaderboard"; fetchBoard(); }
+  let namePickFrom = "start";
+  function openLeaderboard(from) {
+    if (!save.nameLocked) { namePickFrom = from; screen = "namepick"; return; }  // pick a name first
+    lbReturn = from; screen = "leaderboard"; fetchBoard();
+  }
+  function drawNamePick() {
+    bgFill();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "white"; ctx.font = "bold 26px -apple-system, Arial";
+    ctx.fillText("Pick your player name!", W / 2, 140);
+    ctx.fillStyle = "#9fe8ff"; ctx.font = "14px -apple-system, Arial";
+    ctx.fillText("This is your name on the leaderboard.", W / 2, 176);
+    ctx.fillStyle = "#ffd93b"; ctx.font = "bold 15px -apple-system, Arial";
+    ctx.fillText("⚠️ You can't change it later — choose well!", W / 2, 204);
+    roundRect(40, 244, W - 80, 72, 16); ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fill();
+    ctx.fillStyle = "#8effa0"; ctx.font = "bold 28px -apple-system, Arial";
+    ctx.fillText("🏷️ " + save.name, W / 2, 281);
+    drawButton(PICK_REROLL, "🔀  Try another", "#6c5ce7");
+    drawButton(PICK_CONFIRM, "✓  Lock it in!", "#2ecc71");
+    drawButton(PICK_BACK, "◀ Back", "#6c5ce7", 18);
+  }
+  function tapNamePick(x, y) {
+    if (hit(PICK_BACK, x, y)) { screen = namePickFrom; return; }
+    if (hit(PICK_REROLL, x, y)) { rollNewName(); return; }
+    if (hit(PICK_CONFIRM, x, y)) {
+      save.nameLocked = true; writeSave();
+      postScore(save.bestScore);                    // join the board with our best score (if any)
+      lbReturn = namePickFrom; screen = "leaderboard"; fetchBoard();
+      return;
+    }
+  }
   function tapLeaderboard(x, y) {
     if (hit(STORE_BACK, x, y)) { screen = lbReturn; return; }
     if (hit(STORE_PLAY, x, y)) return startGame();
@@ -1134,6 +1154,7 @@
     if (screen === "help")     drawHelp();
     if (screen === "awards")   drawAwards();
     if (screen === "leaderboard") drawLeaderboard();
+    if (screen === "namepick") drawNamePick();
   }
 
   function drawGame() {
@@ -1248,11 +1269,10 @@
       ctx.globalAlpha = 0.45; drawCloud(60, 95, 22); drawCloud(356, 118, 26); ctx.globalAlpha = 1;
     }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    // nickname pill (used for the leaderboard) — tap to roll a new silly name
-    roundRect(REROLL_BTN.x, REROLL_BTN.y, REROLL_BTN.w, REROLL_BTN.h, 16);
-    ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fill();
-    ctx.fillStyle = "#cdd6ff"; ctx.font = "bold 14px -apple-system, Arial";
-    ctx.fillText("🏷️ " + save.name + "   🔀", W / 2, REROLL_BTN.y + REROLL_BTN.h / 2 + 1);
+    if (save.nameLocked) {   // show the locked-in player name (not changeable)
+      ctx.fillStyle = "#cdd6ff"; ctx.font = "bold 14px -apple-system, Arial";
+      ctx.fillText("🏷️ " + save.name, W / 2, 70);
+    }
     ctx.fillStyle = "white"; ctx.font = "bold 46px -apple-system, Arial";
     ctx.fillText("🎯 Emoji", W / 2, 120); ctx.fillText("Catch", W / 2, 175);
     // show a few cuties as decoration
@@ -1264,10 +1284,10 @@
     drawButton(BTN_STORE, "🛒  Store", "#ff5aa7");
     drawButton(BTN_COLLECTION, "🎒  My Cuties", "#f4a63b");
     drawButton(BTN_AWARDS, "🏆  Awards", "#e0a92e");
+    drawButton(BTN_LEADER, "🏅  Leaderboard", "#5b8dff", 21);
     drawButton(MUTE_MENU, save.muted ? "🔇" : "🔊", "#6c5ce7", 18);
     drawButton(HELP_MENU, "❓", "#6c5ce7", 18);
     drawButton(SHARE_MENU, "📤", "#6c5ce7", 18);
-    drawButton(LEADER_MENU, "🏅", "#6c5ce7", 18);
     drawUiToast();
   }
 
@@ -1307,6 +1327,17 @@
     ctx.fillText("You earned 🪙 " + game.earned + " this game!", W / 2, 215);
     ctx.fillStyle = "#ffe08a";
     ctx.fillText("Piggy bank: 🪙 " + save.points, W / 2, 248);
+    // leaderboard rank callout
+    if (lbSubmitting) {
+      ctx.fillStyle = "#9fe8ff"; ctx.font = "bold 16px -apple-system, Arial";
+      ctx.fillText("🏅 Submitting your score…", W / 2, 276);
+    } else if (lbRank) {
+      ctx.fillStyle = "#ffd93b"; ctx.font = "bold 21px -apple-system, Arial";
+      ctx.fillText("🏅 You ranked #" + lbRank + "!", W / 2, 276);
+    } else if (!save.nameLocked && game.score > 0) {
+      ctx.fillStyle = "#ffd93b"; ctx.font = "bold 15px -apple-system, Arial";
+      ctx.fillText("🏅 Tap Leaderboard to pick a name & join!", W / 2, 276);
+    }
     drawButton(GO_PLAY, "▶  Play Again", "#2ecc71");
     drawButton(GO_CUTIES, "🎒 Cuties", "#f4a63b", 18);
     drawButton(GO_AWARDS, "🏆 Awards", "#e0a92e", 18);
@@ -1447,10 +1478,11 @@
   }
   function hit(rect, x, y) { return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h; }
 
-  const BTN_PLAY  = { x: 90, y: 314, w: 240, h: 56 };
-  const BTN_STORE = { x: 90, y: 380, w: 240, h: 56 };
-  const BTN_COLLECTION = { x: 90, y: 446, w: 240, h: 56 };
-  const BTN_AWARDS = { x: 90, y: 512, w: 240, h: 56 };
+  const BTN_PLAY  = { x: 90, y: 306, w: 240, h: 50 };
+  const BTN_STORE = { x: 90, y: 364, w: 240, h: 50 };
+  const BTN_COLLECTION = { x: 90, y: 422, w: 240, h: 50 };
+  const BTN_AWARDS = { x: 90, y: 480, w: 240, h: 50 };
+  const BTN_LEADER = { x: 90, y: 538, w: 240, h: 50 };
   const PAUSE_BTN = { x: W - 46, y: 86, w: 36, h: 34 };
   const MUTE_BTN  = { x: W - 46, y: 126, w: 36, h: 34 };
   const MUTE_MENU = { x: W - 52, y: 14, w: 40, h: 34 };
@@ -1465,6 +1497,9 @@
   const GO_SHARE  = { x: 210, y: 424, w: 170, h: 54 };
   const GO_LEADER = { x: 60, y: 486, w: 300, h: 54 };
   const LEADER_MENU = { x: 104, y: 14, w: 40, h: 34 };
+  const PICK_REROLL  = { x: 60, y: 356, w: 300, h: 56 };
+  const PICK_CONFIRM = { x: 60, y: 428, w: 300, h: 56 };
+  const PICK_BACK    = { x: 12, y: 14, w: 92, h: 34 };
   const RESUME_BTN = { x: 90, y: H / 2 - 10, w: 240, h: 64 };
   const QUIT_BTN = { x: 90, y: H / 2 + 74, w: 240, h: 64 };
   const STORE_BACK = { x: 12, y: 10, w: 96, h: 40 };
