@@ -692,7 +692,8 @@
     return item.type === "art" ? item.name : item.emoji;
   }
 
-  const LEVEL_GOALS = [0, 100, 250, 450, 700, 1000, 1400, 1900];
+  // score needed to reach each level (index = current level). 15 levels total.
+  const LEVEL_GOALS = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4050, 5050, 6250, 7650, 9250];
 
   // =====================================================================
   //  SAVED PROGRESS  (localStorage — no login needed)
