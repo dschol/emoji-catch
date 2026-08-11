@@ -7,28 +7,25 @@
   <title>Emoji Catch — Laylah's Game</title>
   <style>
     html, body {
-      margin: 0; height: 100%;
+      margin: 0; height: 100%; overflow: hidden;
       background: #1b1035;
       font-family: -apple-system, Arial, sans-serif;
       color: white;
       overscroll-behavior: none; touch-action: none;
       -webkit-user-select: none; user-select: none;
     }
-    #wrap { display: flex; flex-direction: column; align-items: center; }
-    h1 { margin: 8px; font-size: 20px; }
+    /* center the game and fill the screen; the canvas is sized by JS to always fit */
+    #wrap { height: 100%; display: flex; align-items: center; justify-content: center; }
     canvas {
       background: linear-gradient(#bfe9ff, #eafff0);
       border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-      max-width: 96vw; max-height: 88vh;
+      display: block;
     }
-    p.hint { opacity: 0.7; font-size: 13px; margin: 6px; }
   </style>
 </head>
 <body>
   <div id="wrap">
-    <h1>🎯 Emoji Catch</h1>
     <canvas id="stage" width="420" height="640"></canvas>
-    <p class="hint">Tap the character shown up top. Earn points, then unlock cuties in the Store!</p>
   </div>
 
   <script>
@@ -677,7 +674,12 @@
   // draw any catalog item by its id, centered at (x,y), sized to sizePx tall
   function renderItem(id, x, y, sizePx) {
     const item = BYID[id];
-    if (!item) return;
+    if (!item) {   // unknown id (e.g. leftover from an old save) - show a token, never invisible
+      ctx.fillStyle = "#b9a6e6"; ctx.beginPath(); ctx.arc(x, y, sizePx * 0.42, 0, 7); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "bold " + Math.round(sizePx * 0.6) + "px -apple-system, Arial"; ctx.fillText("?", x, y);
+      return;
+    }
     if (item.type === "art") { ART[item.id](x, y, sizePx * 0.5); }
     else {
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -705,7 +707,9 @@
     try { save = raw ? JSON.parse(raw) : { points: 0, unlocked: [] }; } catch (e) { save = { points: 0, unlocked: [] }; }
     const set = new Set(save.unlocked);
     STARTERS.forEach(function (e) { set.add(e); });
-    save.unlocked = Array.from(set);
+    // keep ONLY ids that exist in the current catalog - stale ids from old
+    // versions would otherwise fall invisibly and still cost points.
+    save.unlocked = Array.from(set).filter(function (id) { return BYID[id]; });
     if (typeof save.points !== "number") save.points = 0;
     if (typeof save.muted !== "boolean") save.muted = false;
     if (typeof save.totalCatches !== "number") save.totalCatches = 0;  // emojis caught, all time
@@ -1177,6 +1181,14 @@
     if (!save.nameLocked) { namePickFrom = from; screen = "namepick"; return; }  // pick a name first
     lbReturn = from; screen = "leaderboard"; fetchBoard();
   }
+  // draw centered text, auto-shrinking the font until it fits within maxW
+  function centerFit(text, cx, y, maxW, maxPx, color) {
+    let px = maxPx;
+    ctx.font = "bold " + px + "px -apple-system, Arial";
+    while (px > 9 && ctx.measureText(text).width > maxW) { px--; ctx.font = "bold " + px + "px -apple-system, Arial"; }
+    ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, cx, y);
+  }
   function drawNamePick() {
     bgFill();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -1184,11 +1196,9 @@
     ctx.fillText("Pick your player name!", W / 2, 140);
     ctx.fillStyle = "#9fe8ff"; ctx.font = "14px -apple-system, Arial";
     ctx.fillText("This is your name on the leaderboard.", W / 2, 176);
-    ctx.fillStyle = "#ffd93b"; ctx.font = "bold 15px -apple-system, Arial";
-    ctx.fillText("⚠️ You can't change it later — choose well!", W / 2, 204);
+    centerFit("⚠️ You can't change it later!", W / 2, 204, W - 36, 15, "#ffd93b");
     roundRect(40, 244, W - 80, 72, 16); ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fill();
-    ctx.fillStyle = "#8effa0"; ctx.font = "bold 28px -apple-system, Arial";
-    ctx.fillText("🏷️ " + save.name, W / 2, 281);
+    centerFit("🏷️ " + save.name, W / 2, 281, W - 96, 28, "#8effa0");
     drawButton(PICK_REROLL, "🔀  Try another", "#6c5ce7");
     drawButton(PICK_CONFIRM, "✓  Lock it in!", "#2ecc71");
     drawButton(PICK_BACK, "◀ Back", "#6c5ce7", 18);
@@ -1920,6 +1930,21 @@
   // so a purchase can never be lost between sessions.
   window.addEventListener("pagehide", writeSave);
   document.addEventListener("visibilitychange", function () { if (document.hidden) writeSave(); });
+
+  // Size the canvas to the largest that fits the screen, keeping the 420:640
+  // shape. The internal game coordinates stay 420x640, so difficulty (and the
+  // leaderboard) are identical on every device - only the display size changes.
+  function fitCanvas() {
+    const vw = (window.visualViewport ? window.visualViewport.width : window.innerWidth);
+    const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+    const scale = Math.min(vw / W, vh / H);
+    canvas.style.width = Math.floor(W * scale) + "px";
+    canvas.style.height = Math.floor(H * scale) + "px";
+  }
+  window.addEventListener("resize", fitCanvas);
+  window.addEventListener("orientationchange", fitCanvas);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", fitCanvas);
+  fitCanvas();
 
   loadSave();
   bootstrapReferral();

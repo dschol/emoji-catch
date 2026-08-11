@@ -35,7 +35,12 @@ async function hashHex(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ec-salt:" + str));
   return [...new Uint8Array(buf)].slice(0, 8).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
 }
-function today() { return new Date().toISOString().slice(0, 10); }
+const TZ = "America/Los_Angeles";   // day buckets use Pacific time (change if you like)
+function dayKey(ts) {
+  try { return new Date(ts).toLocaleDateString("en-CA", { timeZone: TZ }); }
+  catch (e) { return new Date(ts).toISOString().slice(0, 10); }
+}
+function today() { return dayKey(Date.now()); }
 const publicView = function (b) { return b.slice(0, TOP).map(function (e) { return { name: e.name, score: e.score }; }); };
 const keyOf = function (e) { return e.id ? "id:" + e.id : "nm:" + e.name; };
 const emptyStats = function () { return { plays: 0, sessions: 0, totalMs: 0, ids: [] }; };
@@ -100,7 +105,7 @@ export default {
       if (url.searchParams.get("key") !== (env.STATS_KEY || STATS_KEY)) return new Response("Not authorized", { status: 401, headers: CORS });
       const rows = [];
       for (let i = 0; i < STATS_DAYS; i++) {
-        const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+        const d = dayKey(Date.now() - i * 86400000);
         let s; try { s = JSON.parse((await env.LEADERBOARD.get("stats:" + d)) || "null"); } catch (e) { s = null; }
         s = s || emptyStats();
         rows.push({ day: d, plays: s.plays, players: (s.ids || []).length, sessions: s.sessions, avgSec: s.sessions ? Math.round(s.totalMs / s.sessions / 1000) : 0 });
