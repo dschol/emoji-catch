@@ -1315,10 +1315,18 @@
   }
 
   function drawGame() {
+    ctx.globalAlpha = 1;     // guard: never inherit a transparent state from a prior frame
     drawScene(game.scene);   // paint the background scene first
     for (const e of game.falling) {
-      if (e.portal) drawPortal(e.x, e.y, e.size);
-      else renderItem(e.id, e.x, e.y, e.size);
+      if (e.portal) { drawPortal(e.x, e.y, e.size); continue; }
+      // isolate each emoji so a stray clip/alpha from one can't hide the others,
+      // and draw a bubble behind it so it is ALWAYS visible even if the glyph/art fails to paint.
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 0.46, 0, 7); ctx.fill();
+      renderItem(e.id, e.x, e.y, e.size);
+      ctx.restore();
     }
     for (const f of game.floaters) {
       ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
